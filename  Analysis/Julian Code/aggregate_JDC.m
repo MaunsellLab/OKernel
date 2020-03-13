@@ -9,7 +9,7 @@ function aggregate_JDC()
 
 
 combineAcrossAnimals = 0;
-nowsubject = '902';
+nowsubject = '866';
 stepstim = 1;
 
 datapath = '/Users/julian/Documents/MATLAB/OKernel/';

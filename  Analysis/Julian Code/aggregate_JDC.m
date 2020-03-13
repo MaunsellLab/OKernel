@@ -8,14 +8,15 @@ function aggregate_JDC()
 [IncludeDays] = makeIncludeDays;
 
 
-combineAcrossAnimals = 0;
-nowsubject = '866';
-stepstim = 1;
+combineAcrossAnimals = 1;
+nowsubject = '902';
+stepStim = 1;
+rampStim = 0;
 
 datapath = '/Users/julian/Documents/MATLAB/OKernel/';
 
 dataFiles = {};
-if stepstim
+if stepStim
     if combineAcrossAnimals
         for subj = 2:size(IncludeDays,2)
             if ~isempty(IncludeDays{2,subj})
@@ -33,6 +34,32 @@ if stepstim
                 for i = 1:size(IncludeDays{2,subj},1)
                 dataFiles = {dataFiles{:},...
                     [datapath IncludeDays{1,subj} '/MatFiles/' IncludeDays{2,subj}(i,:) '.mat']};
+                end
+            end
+            
+            
+        end
+    end
+end
+
+if rampStim
+    if combineAcrossAnimals
+        for subj = 2:size(IncludeDays,2)
+            if ~isempty(IncludeDays{3,subj})
+                for i = 1:size(IncludeDays{3,subj},1)
+                dataFiles = {dataFiles{:},...
+                    [datapath IncludeDays{1,subj} '/MatFiles/' IncludeDays{3,subj}(i,:) '.mat']};
+                end
+            end
+            
+            
+        end
+    else
+        for subj = 2:size(IncludeDays,2)
+            if strcmp(nowsubject,IncludeDays{1,subj})
+                for i = 1:size(IncludeDays{3,subj},1)
+                dataFiles = {dataFiles{:},...
+                    [datapath IncludeDays{1,subj} '/MatFiles/' IncludeDays{3,subj}(i,:) '.mat']};
                 end
             end
             

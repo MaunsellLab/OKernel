@@ -10,10 +10,14 @@ function aggregate_JDC()
 
 combineAcrossAnimals = 1;
 nowsubject = '902';
-stepStim = 1;
-rampStim = 0;
+stepStim = 0;
+rampStim = 1;
 
+%datapath for development computer
 datapath = '/Users/julian/Documents/MATLAB/OKernel/';
+
+%datapath for John's computer
+% datapath = '/Users/Shared/Data/OKernel/';
 
 dataFiles = {};
 if stepStim

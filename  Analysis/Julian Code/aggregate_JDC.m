@@ -13,7 +13,11 @@ nowsubject = '902';
 stepStim = 1;
 rampStim = 0;
 
+%datapath for development computer
 datapath = '/Users/julian/Documents/MATLAB/OKernel/';
+
+%datapath for John's computer
+% datapath = '/Users/Shared/Data/OKernel/';
 
 dataFiles = {};
 if stepStim

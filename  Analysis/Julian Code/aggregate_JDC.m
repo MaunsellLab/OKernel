@@ -9,7 +9,7 @@ function aggregate_JDC()
 
 
 combineAcrossAnimals = 1;
-nowsubject = '902';
+nowsubject = '1150';
 stepStim = 0;
 rampStim = 1;
 

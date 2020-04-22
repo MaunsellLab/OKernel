@@ -8,8 +8,8 @@ function aggregate_JDC()
 [IncludeDays] = makeIncludeDays;
 
 
-combineAcrossAnimals = 1;
-nowsubject = '1112';
+combineAcrossAnimals = 0;
+nowsubject = '1218';
 stepStim = 0;
 rampStim = 1;
 

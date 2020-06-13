@@ -1,46 +1,14 @@
-function aggregate_JDC()
+function aggregate_JDC(subjectnum,controlCondition)
+%% only for plotted control data (does not set an inclusion criteria)
+% inputs:
+% subjectnum: subject number as a floating number. if more tan one, enclose
+% in brackets
+% controlCondition: 0 = pre-control; 1 = control; 2 = post-control
 
 % The plots should include:
 %   1) Autocorrelogram of stimulus -- should be the triangle with 50 ms base (SEM for plots?)
 %   2) Autocorrelogram of kernel -- should be broader than the stim auto-corr.
 %   3) Cross-correlogram of stimulus-kernel (trace of N/P kernel?)
-
-[IncludeDays] = makeIncludeDays;
-
-
-combineAcrossAnimals = 0;
-nowsubject = '1257';
-stepStim = 0;
-rampStim = 1;
-
-%set a date range
-customDateRange = 1;
-controlCondition = 1; %pre-control = 0; control = 1, postcontrol = 2
-
-
-if strcmp(nowsubject,'1218')
-    if controlCondition == 0 %    pre-control
-    daterange = {'2020-05-31','2020-06-05'};
-    elseif controlCondition == 1 % control
-    daterange = {'2020-06-06','2020-06-11'};
-    elseif controlCondition == 2
-        daterange = {};
-    end
-elseif strcmp(nowsubject,'1257')
-    if controlCondition == 0 %     pre-control
-    daterange = {'2020-05-27','2020-05-29'};
-    elseif controlCondition == 1 % control
-    daterange = {'2020-05-30','2020-06-11'};
-    elseif controlCondition == 2 % post-control
-        daterange = {};
-    end
-end
-
-if strcmp(daterange{2},'today')
-    daterange{2} = datestr(datetime('today'),'yyyy-mm-dd');
-end
-
-alldates = dateRange(daterange{1},daterange{2}); %must be format yyyy-mm-dd
 
 %datapath for development computer
 datapath = '/Users/julian/Documents/MATLAB/OKernel/';
@@ -48,73 +16,167 @@ datapath = '/Users/julian/Documents/MATLAB/OKernel/';
 %datapath for John's computer
 % datapath = '/Users/Shared/Data/OKernel/';
 
-dataFiles = {};
 
-if customDateRange
+%date ranges for each animal and condition
+
+%1218 = Sophie
+sophiePreCon  = {'2020-05-31','2020-06-05'};
+sophieCon = {'2020-06-06','2020-06-11'};
+sophiePostCon = {};
+
+%1257 = Sufjan
+sufjanPreCon = {'2020-05-25','2020-05-31'};
+sufjanCon = {'2020-06-02','2020-06-07'};
+sufjanPostCon = {};% controlCondition: 0 = pre-control; 1 = control; 2 = post-control
+
+%1220 = Caterina
+caterinaPreCon = {'2020-06-04' '2020-06-09'};%{'2020-05-24' '2020-06-11'};
+caterinaCon = {};
+caterinaPostCon = {};
+
+%1150 = Joaquin
+joaquinPreCon = {'2020-06-07' '2020-06-08'}; %06-09 not working?
+joaquinCon = {};
+joaquinPostCon = {};
+
+if length(subjectnum) == 1
+    nowsubject = num2str(subjectnum);
+    
+    if strcmp(nowsubject,'1218')
+        if controlCondition == 0 %    pre-control
+            daterange = sophiePreCon;
+        elseif controlCondition == 1 % control
+            daterange = sophieCon;
+        elseif controlCondition == 2
+            daterange = sophiePostCon;
+        else
+            error('incorrect control condition: must be 0, 1, or 2')
+        end
+    elseif strcmp(nowsubject,'1257')
+        if controlCondition == 0 %     pre-control
+            daterange = sufjanPreCon;
+        elseif controlCondition == 1 % control
+            daterange = sufjanCon;
+        elseif controlCondition == 2 % post-control
+            daterange = sufjanPostCon;
+        else
+            error('incorrect control condition: must be 0, 1, or 2')
+        end
+    elseif strcmp(nowsubject,'1220')
+        if controlCondition == 0 %     pre-control
+            daterange = caterinaPreCon;
+        elseif controlCondition == 1 % control
+            daterange = caterinaCon;
+        elseif controlCondition == 2 % post-control
+            daterange = caterinaPostCon;
+        else
+            error('incorrect control condition: must be 0, 1, or 2')
+        end
+    elseif strcmp(nowsubject,'1150')
+        if controlCondition == 0 %     pre-control
+            daterange = joaquinPreCon;
+        elseif controlCondition == 1 % control
+            daterange = joaquinCon;
+        elseif controlCondition == 2 % post-control
+            daterange = joaquinPostCon;
+        else
+            error('incorrect control condition: must be 0, 1, or 2')
+        end
+    end
+    
+    if strcmp(daterange{2},'today')
+        daterange{2} = datestr(datetime('today'),'yyyy-mm-dd');
+    end
+    
+    alldates = dateRange(daterange{1},daterange{2}); %must be format yyyy-mm-dd
+    
+    %datapath for development computer
+    datapath = '/Users/julian/Documents/MATLAB/OKernel/';
+    
+    %datapath for John's computer
+    % datapath = '/Users/Shared/Data/OKernel/';
+    
+    dataFiles = {};
+    
+    
     for nowdate = 1:length(alldates)
-        dataFiles = {dataFiles{:},...
-            [datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat']};
-    end
-else
-    
-    if stepStim
-        if combineAcrossAnimals
-            for subj = 2:size(IncludeDays,2)
-                if ~isempty(IncludeDays{2,subj})
-                    for i = 1:size(IncludeDays{2,subj},1)
-                        dataFiles = {dataFiles{:},...
-                            [datapath IncludeDays{1,subj} '/MatFiles/' IncludeDays{2,subj}(i,:) '.mat']};
-                    end
-                end
-                
-                
-            end
-        else
-            for subj = 2:size(IncludeDays,2)
-                if strcmp(nowsubject,IncludeDays{1,subj})
-                    for i = 1:size(IncludeDays{2,subj},1)
-                        dataFiles = {dataFiles{:},...
-                            [datapath IncludeDays{1,subj} '/MatFiles/' IncludeDays{2,subj}(i,:) '.mat']};
-                    end
-                end
-                
-                
-            end
+        if isfile([datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat'])
+            dataFiles = {dataFiles{:},...
+                [datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat']};
         end
     end
     
-    if rampStim
-        if combineAcrossAnimals
-            for subj = 2:size(IncludeDays,2)
-                if ~isempty(IncludeDays{3,subj})
-                    for i = 1:size(IncludeDays{3,subj},1)
-                        dataFiles = {dataFiles{:},...
-                            [datapath IncludeDays{1,subj} '/MatFiles/' IncludeDays{3,subj}(i,:) '.mat']};
-                    end
-                end
-                
-                
+else %more than one subject number
+    
+    dataFiles = {};
+    
+    for nowsubj = 1:length(subjectnum)
+        nowsubject = num2str(subjectnum(nowsubj));
+        
+        if strcmp(nowsubject,'1218')
+            if controlCondition == 0 %    pre-control
+                daterange = sophiePreCon;
+            elseif controlCondition == 1 % control
+                daterange = sophieCon;
+            elseif controlCondition == 2
+                daterange = sophiePostCon;
+            else
+                error('incorrect control condition: must be 0, 1, or 2')
             end
-        else
-            for subj = 2:size(IncludeDays,2)
-                if strcmp(nowsubject,IncludeDays{1,subj})
-                    for i = 1:size(IncludeDays{3,subj},1)
-                        dataFiles = {dataFiles{:},...
-                            [datapath IncludeDays{1,subj} '/MatFiles/' IncludeDays{3,subj}(i,:) '.mat']};
-                    end
-                end
-                
-                
+        elseif strcmp(nowsubject,'1257')
+            if controlCondition == 0 %     pre-control
+                daterange = sufjanPreCon;
+            elseif controlCondition == 1 % control
+                daterange = sufjanCon;
+            elseif controlCondition == 2 % post-control
+                daterange = sufjanPostCon;
+            else
+                error('incorrect control condition: must be 0, 1, or 2')
+            end
+        elseif strcmp(nowsubject,'1220')
+            if controlCondition == 0 %     pre-control
+                daterange = caterinaPreCon;
+            elseif controlCondition == 1 % control
+                daterange = caterinaCon;
+            elseif controlCondition == 2 % post-control
+                daterange = caterinaPostCon;
+            else
+                error('incorrect control condition: must be 0, 1, or 2')
+            end
+        elseif strcmp(nowsubject,'1150')
+            if controlCondition == 0 %     pre-control
+                daterange = joaquinPreCon;
+            elseif controlCondition == 1 % control
+                daterange = joaquinCon;
+            elseif controlCondition == 2 % post-control
+                daterange = joaquinPostCon;
+            else
+                error('incorrect control condition: must be 0, 1, or 2')
+            end
+        end
+        
+        if strcmp(daterange{2},'today')
+            daterange{2} = datestr(datetime('today'),'yyyy-mm-dd');
+        end
+        
+        alldates = dateRange(daterange{1},daterange{2}); %must be format yyyy-mm-dd
+        
+    
+        for nowdate = 1:length(alldates)
+            if isfile([datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat'])
+                dataFiles = {dataFiles{:},...
+                    [datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat']};
             end
         end
     end
-    
 end
-    
+
+%% John's aggregate code
+
     numFiles = length(dataFiles);
     pathParts = split(dataFiles.', '/');
     if numFiles == 1
-        numAnimals = 1;
+        numAnimals = length(subjectnum);
     else
         animals = cell(1, numFiles);
         daterange = cell(1, numFiles);
@@ -129,8 +191,8 @@ end
     plotRTStartMS = -600;
     plotRTEndMS = 200;
     bins = plotEndMS - plotStartMS;
-    kernelRTMinMS = 250;
-    kernelRTMaxMS = 700;
+    kernelRTMinMS = 200;
+    kernelRTMaxMS = 500;
     % allocate buffers
     dayHitSums = zeros(numFiles, bins);
     dayNumHits = zeros(1, numFiles);
@@ -260,8 +322,16 @@ end
     set(axisHandle, 'OuterPosition', [0.02 0.75, 0.25, 0.2]);
     text(0.00, 1.25, 'OKernel', 'FontWeight', 'bold', 'FontSize', 16);
     headerText = cell(1, 1);
-    headerText{1} = sprintf('%d sessions from %d animals', numFiles, numAnimals);
+    headerText{1} = sprintf('%d sessions from %d animals', numFiles, length(subjectnum));
     headerText{length(headerText) + 1} = sprintf('Reaction times from %d to %d ms', kernelRTMinMS, kernelRTMaxMS);
+    headerText{length(headerText) + 2} = ['Animal number(s): ' num2str(subjectnum) ];
+    if controlCondition == 0
+    headerText{length(headerText) + 3} = 'Condition: Pre-Control Stimulation Days' ;
+    elseif controlCondition == 1
+        headerText{length(headerText) + 3} = 'Condition: Control Stimulation Days' ;
+    elseif controlCondition == 2
+        headerText{length(headerText) + 3} = 'Post-Condition: Pre-Control Stimulation Days' ;
+    end
     text(0.00, 1.00, headerText, 'VerticalAlignment', 'top');
     if ~isempty(hitMean)
         numHits = sum(dayNumHits);

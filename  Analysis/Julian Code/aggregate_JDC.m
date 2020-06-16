@@ -9,9 +9,38 @@ function aggregate_JDC()
 
 
 combineAcrossAnimals = 0;
-nowsubject = '1112';
+nowsubject = '1257';
 stepStim = 0;
 rampStim = 1;
+
+%set a date range
+customDateRange = 1;
+controlCondition = 1; %pre-control = 0; control = 1, postcontrol = 2
+
+
+if strcmp(nowsubject,'1218')
+    if controlCondition == 0 %    pre-control
+    daterange = {'2020-05-31','2020-06-05'};
+    elseif controlCondition == 1 % control
+    daterange = {'2020-06-06','2020-06-11'};
+    elseif controlCondition == 2
+        daterange = {};
+    end
+elseif strcmp(nowsubject,'1257')
+    if controlCondition == 0 %     pre-control
+    daterange = {'2020-05-27','2020-05-29'};
+    elseif controlCondition == 1 % control
+    daterange = {'2020-05-30','2020-06-11'};
+    elseif controlCondition == 2 % post-control
+        daterange = {};
+    end
+end
+
+if strcmp(daterange{2},'today')
+    daterange{2} = datestr(datetime('today'),'yyyy-mm-dd');
+end
+
+alldates = dateRange(daterange{1},daterange{2}); %must be format yyyy-mm-dd
 
 %datapath for development computer
 datapath = '/Users/julian/Documents/MATLAB/OKernel/';
@@ -20,58 +49,67 @@ datapath = '/Users/julian/Documents/MATLAB/OKernel/';
 % datapath = '/Users/Shared/Data/OKernel/';
 
 dataFiles = {};
-if stepStim
-    if combineAcrossAnimals
-        for subj = 2:size(IncludeDays,2)
-            if ~isempty(IncludeDays{2,subj})
-                for i = 1:size(IncludeDays{2,subj},1)
-                dataFiles = {dataFiles{:},...
-                    [datapath IncludeDays{1,subj} '/MatFiles/' IncludeDays{2,subj}(i,:) '.mat']};
+
+if customDateRange
+    for nowdate = 1:length(alldates)
+        dataFiles = {dataFiles{:},...
+            [datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat']};
+    end
+else
+    
+    if stepStim
+        if combineAcrossAnimals
+            for subj = 2:size(IncludeDays,2)
+                if ~isempty(IncludeDays{2,subj})
+                    for i = 1:size(IncludeDays{2,subj},1)
+                        dataFiles = {dataFiles{:},...
+                            [datapath IncludeDays{1,subj} '/MatFiles/' IncludeDays{2,subj}(i,:) '.mat']};
+                    end
                 end
+                
+                
             end
-            
-            
-        end
-    else
-        for subj = 2:size(IncludeDays,2)
-            if strcmp(nowsubject,IncludeDays{1,subj})
-                for i = 1:size(IncludeDays{2,subj},1)
-                dataFiles = {dataFiles{:},...
-                    [datapath IncludeDays{1,subj} '/MatFiles/' IncludeDays{2,subj}(i,:) '.mat']};
+        else
+            for subj = 2:size(IncludeDays,2)
+                if strcmp(nowsubject,IncludeDays{1,subj})
+                    for i = 1:size(IncludeDays{2,subj},1)
+                        dataFiles = {dataFiles{:},...
+                            [datapath IncludeDays{1,subj} '/MatFiles/' IncludeDays{2,subj}(i,:) '.mat']};
+                    end
                 end
+                
+                
             end
-            
-            
         end
     end
-end
-
-if rampStim
-    if combineAcrossAnimals
-        for subj = 2:size(IncludeDays,2)
-            if ~isempty(IncludeDays{3,subj})
-                for i = 1:size(IncludeDays{3,subj},1)
-                dataFiles = {dataFiles{:},...
-                    [datapath IncludeDays{1,subj} '/MatFiles/' IncludeDays{3,subj}(i,:) '.mat']};
+    
+    if rampStim
+        if combineAcrossAnimals
+            for subj = 2:size(IncludeDays,2)
+                if ~isempty(IncludeDays{3,subj})
+                    for i = 1:size(IncludeDays{3,subj},1)
+                        dataFiles = {dataFiles{:},...
+                            [datapath IncludeDays{1,subj} '/MatFiles/' IncludeDays{3,subj}(i,:) '.mat']};
+                    end
                 end
+                
+                
             end
-            
-            
-        end
-    else
-        for subj = 2:size(IncludeDays,2)
-            if strcmp(nowsubject,IncludeDays{1,subj})
-                for i = 1:size(IncludeDays{3,subj},1)
-                dataFiles = {dataFiles{:},...
-                    [datapath IncludeDays{1,subj} '/MatFiles/' IncludeDays{3,subj}(i,:) '.mat']};
+        else
+            for subj = 2:size(IncludeDays,2)
+                if strcmp(nowsubject,IncludeDays{1,subj})
+                    for i = 1:size(IncludeDays{3,subj},1)
+                        dataFiles = {dataFiles{:},...
+                            [datapath IncludeDays{1,subj} '/MatFiles/' IncludeDays{3,subj}(i,:) '.mat']};
+                    end
                 end
+                
+                
             end
-            
-            
         end
     end
+    
 end
-
     
     numFiles = length(dataFiles);
     pathParts = split(dataFiles.', '/');
@@ -79,10 +117,10 @@ end
         numAnimals = 1;
     else
         animals = cell(1, numFiles);
-        dates = cell(1, numFiles);
+        daterange = cell(1, numFiles);
         for a = 1:numFiles
             animals{a} = pathParts{a, 6};
-            dates{a} = pathParts{a, 8};
+            daterange{a} = pathParts{a, 8};
         end
         numAnimals = length(unique(animals));
     end
@@ -114,7 +152,7 @@ end
     % process each session (file)
     for f = 1:numFiles
         if numAnimals > 1
-            fprintf('%s %s\n', animals{f}, dates{f});
+            fprintf('%s %s\n', animals{f}, daterange{f});
         end
         load(dataFiles{f});                                         % load the session
         minRespTimeMS = min(minRespTimeMS, file.tooFastMS);         % set min/max response times

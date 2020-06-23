@@ -22,20 +22,20 @@ datapath = '/Users/julian/Documents/MATLAB/OKernel/';
 %1218 = Sophie
 sophiePreCon  = {'2020-05-31','2020-06-05'};
 sophieCon = {'2020-06-06','2020-06-16'}; %began controls 6/6
-sophiePostCon = {};
+sophiePostCon = {'2020-06-17' , '2020-06-21'};
 
 sophieSkip = {};
  
 %1257 = Sufjan
 sufjanPreCon = {'2020-05-25','2020-05-31'};
 sufjanCon = {'2020-05-30','2020-06-14'}; %began controls 5/30--6/7 and 6/9 not working?
-sufjanPostCon = {'2020-06-15' , '2020-06-16'};% controlCondition: 0 = pre-control; 1 = control; 2 = post-control
+sufjanPostCon = {'2020-06-15' , '2020-06-21'};% controlCondition: 0 = pre-control; 1 = control; 2 = post-control
 
 %days to skip due to not enough trials
 sufjanSkip = {'2020-06-08'};
 
 %1220 = Caterina
-caterinaPreCon = {'2020-05-24' '2020-06-15'};%{'2020-05-24' '2020-06-11'};
+caterinaPreCon = {'2020-06-19' '2020-06-21'};%{'2020-05-24' '2020-06-21'};
 caterinaCon = {};
 caterinaPostCon = {};
 

@@ -18,6 +18,8 @@ function [dataFiles] = controlDataFiles(subjectnum,controlCondition)
 %datapath for John's computer
 datapath = '/Users/Shared/Data/OKernel/';
 
+
+CombinePreandPostControl = 1;
 %date ranges for each animal and condition
 
 %1218 = Sophie
@@ -70,7 +72,7 @@ if length(subjectnum) == 1
             if controlCondition == 3 
                 daterange2 = sophiePostCon;
             end
-        elseif controlCondition == 1 || controlCondition == 4 % control
+        elseif controlCondition == 1 % control
             daterange = sophieCon;
         elseif controlCondition == 2
             daterange = sophiePostCon;
@@ -81,12 +83,12 @@ if length(subjectnum) == 1
         
         skipDates = sufjanSkip;
         
-        if controlCondition == 0 || controlCondition == 3  %     pre-control
+        if controlCondition == 0 %     pre-control
             daterange = sufjanPreCon;
-            if controlCondition == 3 
+            if CombinePreandPostControl
                 daterange2 = sophiePostCon;
             end
-        elseif controlCondition == 1 || controlCondition == 4 % control
+        elseif controlCondition == 1 % control
             daterange = sufjanCon;
         elseif controlCondition == 2 % post-control
             daterange = sufjanPostCon;
@@ -99,7 +101,7 @@ if length(subjectnum) == 1
         
         if controlCondition == 0 %     pre-control
             daterange = caterinaPreCon;
-        elseif controlCondition == 1 || controlCondition == 4 % control
+        elseif controlCondition == 1 % control
             daterange = caterinaCon;
         elseif controlCondition == 2 % post-control
             daterange = caterinaPostCon;
@@ -112,7 +114,7 @@ if length(subjectnum) == 1
         
         if controlCondition == 0 %     pre-control
             daterange = joaquinPreCon;
-        elseif controlCondition == 1 || controlCondition == 4 % control
+        elseif controlCondition == 1 % control
             daterange = joaquinCon;
         elseif controlCondition == 2 % post-control
             daterange = joaquinPostCon;
@@ -126,7 +128,7 @@ if length(subjectnum) == 1
     end
     
     alldates = dateRange(daterange{1},daterange{2}); %must be format yyyy-mm-dd
-    if controlCondition == 3 
+    if CombinePreandPostControl && controlCondition == 0
         alldates2 = dateRange(daterange2{1},daterange2{2});
         alldates = [alldates alldates2];
     end
@@ -163,12 +165,12 @@ else %more than one subject number
             
             skipDates = sophieSkip;
             
-            if controlCondition == 0 || controlCondition == 3  %    pre-control
+            if controlCondition == 0 %    pre-control
                 daterange = sophiePreCon;
-                if controlCondition == 3 
+                if CombinePreandPostControl
                     daterange2 = sophiePostCon;
                 end
-            elseif controlCondition == 1 || controlCondition == 4 % control
+            elseif controlCondition == 1 % control
                 daterange = sophieCon;
             elseif controlCondition == 2
                 daterange = sophiePostCon;
@@ -179,12 +181,12 @@ else %more than one subject number
             
             skipDates = sufjanSkip;
             
-            if controlCondition == 0 || controlCondition == 3 %     pre-control
+            if controlCondition == 0 %     pre-control
                 daterange = sufjanPreCon;
-                if controlCondition == 3 
+                if CombinePreandPostControl
                     daterange2 = sufjanPostCon;
                 end
-            elseif controlCondition == 1 || controlCondition == 4 % control
+            elseif controlCondition == 1 % control
                 daterange = sufjanCon;
             elseif controlCondition == 2 % post-control
                 daterange = sufjanPostCon;
@@ -195,9 +197,9 @@ else %more than one subject number
             
             skipDates = caterinaSkip;
             
-            if controlCondition == 0 || controlCondition == 3 %     pre-control
+            if controlCondition == 0 %     pre-control
                 daterange = caterinaPreCon;
-            elseif controlCondition == 1 || controlCondition == 4% control
+            elseif controlCondition == 1 % control
                 daterange = caterinaCon;
             elseif controlCondition == 2 % post-control
                 daterange = caterinaPostCon;
@@ -210,7 +212,7 @@ else %more than one subject number
             
             if controlCondition == 0 %     pre-control
                 daterange = joaquinPreCon;
-            elseif controlCondition == 1 || controlCondition == 4 % control
+            elseif controlCondition == 1 % control
                 daterange = joaquinCon;
             elseif controlCondition == 2 % post-control
                 daterange = joaquinPostCon;
@@ -231,7 +233,7 @@ else %more than one subject number
         
         alldates = dateRange(daterange{1},daterange{2}); %must be format yyyy-mm-dd
         
-        if controlCondition == 3 && ~isempty(daterange2)
+        if CombinePreandPostControl && controlCondition == 0
             alldates2 = dateRange(daterange2{1},daterange2{2});
             alldates = [alldates alldates2];
         end
@@ -251,8 +253,6 @@ else %more than one subject number
                     [datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat']};
             end
         end
-        daterange = [];
-        daterange2 = [];
     end
 end
 

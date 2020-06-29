@@ -16,7 +16,7 @@ datapath = '/Users/julian/Documents/MATLAB/OKernel/';
 %datapath for John's computer
 % datapath = '/Users/Shared/Data/OKernel/';
 
-CombinePreandPostControl = 0;
+CombinePreandPostControl = 1;
 %date ranges for each animal and condition
 
 %1218 = Sophie
@@ -36,13 +36,13 @@ sufjanSkip = {'2020-06-08'};
 
 %1220 = Caterina
 caterinaPreCon = {'2020-06-17' '2020-06-21'};%{'2020-05-24' '2020-06-21'};
-caterinaCon = {'2020-06-22' ,'2020-06-25'};
+caterinaCon = {'2020-06-22' ,'2020-06-28'};
 caterinaPostCon = {};
 
 caterinaSkip = {'2020-06-16'};
 
 %1150 = Joaquin
-joaquinPreCon = {'2020-06-07' '2020-06-14'}; 
+joaquinPreCon = {'2020-06-07', '2020-06-14'}; 
 joaquinCon = {};
 joaquinPostCon = {};
 
@@ -228,9 +228,11 @@ else %more than one subject number
             daterange{2} = datestr(datetime('today'),'yyyy-mm-dd');
         end
         
+     
+        
         alldates = dateRange(daterange{1},daterange{2}); %must be format yyyy-mm-dd
         
-        if CombinePreandPostControl && controlCondition == 0
+        if CombinePreandPostControl && controlCondition == 0 && ~isempty(daterange2)
             alldates2 = dateRange(daterange2{1},daterange2{2});
             alldates = [alldates alldates2];
         end
@@ -250,6 +252,10 @@ else %more than one subject number
                     [datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat']};
             end
         end
+        alldates = [];
+        alldates2 = [];
+        daterange = [];
+        daterange2 = [];
     end
 end
 

@@ -36,13 +36,13 @@ sufjanSkip = {'2020-06-08'};
 
 %1220 = Caterina
 caterinaPreCon = {'2020-06-17' '2020-06-21'};%{'2020-05-24' '2020-06-21'};
-caterinaCon = {'2020-06-22' ,'2020-06-28'};
+caterinaCon = {'2020-06-22' ,'2020-06-25'};
 caterinaPostCon = {};
 
 caterinaSkip = {'2020-06-16'};
 
 %1150 = Joaquin
-joaquinPreCon = {'2020-06-07', '2020-06-14'}; 
+joaquinPreCon = {'2020-06-07' '2020-06-14'}; 
 joaquinCon = {};
 joaquinPostCon = {};
 
@@ -125,7 +125,7 @@ if length(subjectnum) == 1
     end
     
     alldates = dateRange(daterange{1},daterange{2}); %must be format yyyy-mm-dd
-    if CombinePreandPostControl && controlCondition == 0
+    if CombinePreandPostControl
         alldates2 = dateRange(daterange2{1},daterange2{2});
         alldates = [alldates alldates2];
     end
@@ -164,9 +164,6 @@ else %more than one subject number
             
             if controlCondition == 0 %    pre-control
                 daterange = sophiePreCon;
-                if CombinePreandPostControl
-                    daterange2 = sophiePostCon;
-                end
             elseif controlCondition == 1 % control
                 daterange = sophieCon;
             elseif controlCondition == 2
@@ -180,9 +177,6 @@ else %more than one subject number
             
             if controlCondition == 0 %     pre-control
                 daterange = sufjanPreCon;
-                if CombinePreandPostControl
-                    daterange2 = sufjanPostCon;
-                end
             elseif controlCondition == 1 % control
                 daterange = sufjanCon;
             elseif controlCondition == 2 % post-control
@@ -228,14 +222,7 @@ else %more than one subject number
             daterange{2} = datestr(datetime('today'),'yyyy-mm-dd');
         end
         
-     
-        
         alldates = dateRange(daterange{1},daterange{2}); %must be format yyyy-mm-dd
-        
-        if CombinePreandPostControl && controlCondition == 0 && ~isempty(daterange2)
-            alldates2 = dateRange(daterange2{1},daterange2{2});
-            alldates = [alldates alldates2];
-        end
         
         for i = 1:length(skipDates)
             for j = 1:length(alldates)
@@ -252,10 +239,6 @@ else %more than one subject number
                     [datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat']};
             end
         end
-        alldates = [];
-        alldates2 = [];
-        daterange = [];
-        daterange2 = [];
     end
 end
 

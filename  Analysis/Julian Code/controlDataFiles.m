@@ -14,9 +14,11 @@ function [dataFiles] = controlDataFiles(subjectnum,controlCondition)
 
 %datapath for development computer
 datapath = '/Users/julian/Documents/MATLAB/OKernel/';
+% outputpath = '/Users/julian/Documents/MATLAB/OKernel/';
 
 %datapath for John's computer
 % datapath = '/Users/Shared/Data/OKernel/';
+outputpath = '/Users/Shared/Data/OKernel/';
 
 %date ranges for each animal and condition
 
@@ -147,7 +149,7 @@ if length(subjectnum) == 1
         if isfile([datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat'])
             
             dataFiles = {dataFiles{:},...
-                [datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat']};
+                [outputpath nowsubject '/MatFiles/' alldates{nowdate} '.mat']};
             
         end
     end
@@ -248,7 +250,7 @@ else %more than one subject number
             if isfile([datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat'])
             
                 dataFiles = {dataFiles{:},...
-                    [datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat']};
+                    [outputpath nowsubject '/MatFiles/' alldates{nowdate} '.mat']};
             end
         end
         daterange = [];

@@ -1,9 +1,10 @@
-function aggregate_Controls(subjectnum,controlCondition)
+function [dataFiles] = aggregate_Controls(subjectnum,controlCondition)
 %% only for plotted control data (does not set an inclusion criteria)
 % inputs:
 % subjectnum: subject number as a floating number. if more tan one, enclose
 % in brackets
-% controlCondition: 0 = pre-control; 1 = control; 2 = post-control
+% controlCondition: 0 = pre-control; 1 = control (5 sessions); 2 = post-control; 3 =
+% combine pre- and post-control (10 sessions total); 
 
 % The plots should include:
 %   1) Autocorrelogram of stimulus -- should be the triangle with 50 ms base (SEM for plots?)
@@ -17,6 +18,7 @@ datapath = '/Users/julian/Documents/MATLAB/OKernel/';
 % datapath = '/Users/Shared/Data/OKernel/';
 
 CombinePreandPostControl = 1;
+
 %date ranges for each animal and condition
 
 %1218 = Sophie
@@ -54,6 +56,7 @@ if CombinePreandPostControl
     %be 5 per animal
     sophieCon = {'2020-06-07','2020-06-16'}; 
     sufjanCon = {'2020-06-04','2020-06-14'}; %skips over 06-08
+    
     
 end
 
@@ -416,8 +419,10 @@ subjectnum(isnan(subjectnum)) = [];
     headerText{1} = sprintf('%d sessions from %d animals', numFiles, length(subjectnum));
     headerText{length(headerText) + 1} = sprintf('Reaction times from %d to %d ms', kernelRTMinMS, kernelRTMaxMS);
     headerText{length(headerText) + 2} = ['Animal number(s): ' num2str(subjectnum) ];
-    if controlCondition == 0
+    if controlCondition == 0 && ~CombinePreandPostControl
     headerText{length(headerText) + 3} = 'Condition: Pre-Control Stimulation Days' ;
+    elseif controlCondition == 0 && CombinePreandPostControl
+    headerText{length(headerText) + 3} = 'Condition: Pre/post-Control Stimulation Days (combined)' ;
     elseif controlCondition == 1
         headerText{length(headerText) + 3} = 'Condition: Control Stimulation Days' ;
     elseif controlCondition == 2

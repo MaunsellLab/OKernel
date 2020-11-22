@@ -13,10 +13,12 @@ function [dataFiles] = controlDataFiles(subjectnum,controlCondition)
 %   3) Cross-correlogram of stimulus-kernel (trace of N/P kernel?)
 
 %datapath for development computer
-% datapath = '/Users/julian/Documents/MATLAB/OKernel/';
+datapath = '/Users/julian/Documents/MATLAB/OKernel/';
+% outputpath = '/Users/julian/Documents/MATLAB/OKernel/';
 
 %datapath for John's computer
-datapath = '/Users/Shared/Data/OKernel/';
+% datapath = '/Users/Shared/Data/OKernel/';
+outputpath = '/Users/Shared/Data/OKernel/';
 
 %date ranges for each animal and condition
 
@@ -29,7 +31,7 @@ sophieSkip = {};
  
 %1257 = Sufjan
 sufjanPreCon = {'2020-05-25','2020-05-29'};
-sufjanCon = {'2020-06-10','2020-06-14'};%{'2020-05-30','2020-06-14'}; %began controls 5/30--6/7 and 6/9 not working?
+sufjanCon = {'2020-06-10','2020-06-14'}; %{'2020-06-10','2020-06-14'};%{'2020-05-30','2020-06-14'}; %began controls 5/30--6/7 and 6/9 not working?
 sufjanPostCon = {'2020-06-21' , '2020-06-25'};%{'2020-06-15' , '2020-06-25'};% controlCondition: 0 = pre-control; 1 = control; 2 = post-control
 
 %days to skip due to not enough trials
@@ -147,7 +149,7 @@ if length(subjectnum) == 1
         if isfile([datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat'])
             
             dataFiles = {dataFiles{:},...
-                [datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat']};
+                [outputpath nowsubject '/MatFiles/' alldates{nowdate} '.mat']};
             
         end
     end
@@ -248,7 +250,7 @@ else %more than one subject number
             if isfile([datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat'])
             
                 dataFiles = {dataFiles{:},...
-                    [datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat']};
+                    [outputpath nowsubject '/MatFiles/' alldates{nowdate} '.mat']};
             end
         end
         daterange = [];

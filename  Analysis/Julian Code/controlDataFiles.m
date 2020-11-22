@@ -255,6 +255,4 @@ else %more than one subject number
         daterange2 = [];
     end
 end
-
-
 subjectnum(isnan(subjectnum)) = [];

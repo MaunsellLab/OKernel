@@ -60,7 +60,7 @@ function dParams = OKMatlab(dParams, file, trials)
 
   RTvStimulus(dParams, trials, trialStructs);
   psychometric(dParams, trials, trialStructs);
-if doPowerVTrial;
+  if doPowerVTrial;
     oKernel(dParams, file, trials, false);
     powerVTrial(dParams, file, trials, indices);
   else

@@ -1,6 +1,6 @@
 function testFA
 
-minMS = 0;          % minimum prestim time
+minMS = 500;          % minimum prestim time
 maxMS = 3000;         % maximum prestim time
 tooFastMS = 0;
 pH = 0.5;             % probability of a hit
@@ -15,12 +15,18 @@ for l = 1:length(lambdas)
   numF = zeros(1, repsPerLambda);
   for r = 1:repsPerLambda
     while numF(r) == 0
-      [fitL(r), numF(r)] = doTruncFit(lambda, numTrials, minMS, maxMS, tooFastMS, mod(r,10) == 0);
+      [fitted, numF(r), x, y] = doTruncFit(lambda, numTrials, minMS, maxMS, tooFastMS);
+    end
+    fitL(r) = -fitted.b;
+    if mod(r,10) == 0
+      figure(2);
+      clf;
+      rows = 2;
+      subplot(rows, 1, 1);
+      plot(fitted, x, y);
     end
   end
-  fprintf('L = %.5f\n', lambda);
-%   fprintf(' Uncorrected L fit = %.5f SEM %.5f (average Fs = %.1f)\n', mean(unFitL), std(unFitL)/sqrt(repsPerLambda), mean(numF));
-  fprintf(' Pure   L fit = %.5f SEM %.5f (average Fs = %.1f)\n', mean(fitL), std(fitL)/sqrt(repsPerLambda), mean(numF));
+  fprintf(' Actual %.5f, L fit = %.5f SEM %.5f (average Fs = %.1f)\n', lambda, mean(fitL), std(fitL)/sqrt(repsPerLambda), mean(numF));
 end
 
 % dprime(pH, numF / numTrials)
@@ -49,41 +55,22 @@ function y = adjustForShortTrials(y, binEdgesMS, minMS, maxMS)
   
   % The remaining bins have a linearly changing number of short trials across their full width.
   for b = b:length(binEdgesMS) - 1
-    fullFrac = 1.0 - mean(binEdgesMS(b:b + 1)) / (maxMS - minMS);         % average full trials across entire bin
+    fullFrac = 1.0 - (mean(binEdgesMS(b:b + 1)) - minMS) / (maxMS - minMS);         % average full trials across entire bin
       y(b) = y(b) / fullFrac;
   end
 end
 
 %%
-function  delaysMS = padTrials(delaysMS, pF, minMS, maxMS)
-%
-% Adjust for the trials that ended early
-%
-  numTrials = sum(delaysMS >= minMS);
-  for n = 1:numTrials
-    startMS = minMS + (n - 1) * (maxMS - minMS) / (numTrials - 1);
-    for t = startMS:maxMS
-      if rand() < pF
-        delaysMS = [delaysMS, t]; %#ok<*AGROW>
-        break;
-      end
-    end
-  end
-end
-
-%%
-function [fitL, numF] = doTruncFit(lambda, numTrials, minMS, maxMS, tooFastMS, doPlots)
+function [fitted, numF, x, y] = doTruncFit(lambda, numTrials, minMS, maxMS, tooFastMS)
 %
 % Fits where the trials stop early, uniformly between minMS and maxMS
 %
-  % numH = 0;
   pF = lambda * exp(-lambda); % Poisson probability for (1) F
-
   delaysMS = [];
   stimMSs = zeros(1, numTrials);
   for n = 1:numTrials
     stimMS = minMS + (n - 1) * (maxMS - minMS) / (numTrials - 1);
-    stimMSs(n) = stimMS;
+    stimMSs(n) = stimMS;                    % truncate trial at stimOn time
     for t = 1:stimMSs(n)
       if rand() < pF
         delaysMS = [delaysMS, t]; %#ok<*AGROW>
@@ -103,29 +90,10 @@ function [fitL, numF] = doTruncFit(lambda, numTrials, minMS, maxMS, tooFastMS, d
   
   % fit() doesn't work well if there are a lot of y == 0 entries at the end of the sequence.  These are undersampled,
   % and they can't be corrected for the number of short trials. 
-%   validBins = y > 0;
-%   if sum(validBins) < 3
-%     numF = 0;
-%     fitL = 0;
-%     return;
-%   end
-%   y = y(1:lastY)';
-%   x = x(1:lastY)';
-%   y = y(validBins)';
-%   x = x(validBins)';
   lastY = find(y > 0, 1, 'last' );
   y = y(1:lastY)';
   x = x(1:lastY)';
   fitted = fit(x, y, 'exp1', 'startPoint', [0, 0]);
-  fitL = -fitted.b;
-
-  if doPlots
-    figure(2);
-    clf;
-    rows = 2;
-    subplot(rows, 1, 1);
-    plot(fitted, x, y);
-  end
 end
 
 %%

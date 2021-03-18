@@ -42,15 +42,24 @@ function y = adjustForShortTrials(y, binEdgesMS, minMS, maxMS)
   % The first bin spans minMS needs special handling.  The fraction of that bin before minMS needs no adjustment,
   % but a proportional adjustment is needed for the fraction after minMS.
   adjust = (minMS - binEdgesMS(b)) / diff(binEdgesMS(b:b + 1));           % portion before minMS
+  weight = 1.5;
+  wMean = (1.0 + weight * fullFact) / (1.0 + weight);
   fullFrac = 1.0 - mean([binEdgesMS(b + 1), minMS]) / (maxMS - minMS);   	% frac full trials in changing part of bin
-  adjust = adjust + fullFrac * (binEdgesMS(b + 1) - minMS) / diff(binEdgesMS(b:b + 1));
+%   adjust = adjust + mean([1.0, fullFrac]) * (binEdgesMS(b + 1) - minMS) / diff(binEdgesMS(b:b + 1));
+  adjust = adjust + wMean * (binEdgesMS(b + 1) - minMS) / diff(binEdgesMS(b:b + 1));
   y(b) = y(b) / adjust;
   b = b + 1;
   
   % The remaining bins have a linearly changing number of short trials across their full width.
   for b = b:length(binEdgesMS) - 1
     fullFrac = 1.0 - mean(binEdgesMS(b:b + 1)) / (maxMS - minMS);         % average full trials across entire bin
-      y(b) = y(b) / fullFrac;
+%     if y(b) > 0
+      wMean = (1.0 + weight * fullFact) / (1.0 + weight);
+      y(b) = y(b) / wMean;
+%       y(b) = y(b) / mean([1.0, fullFrac]);
+%     else
+%       y(b) = (1.0 - fullFrac) / 2.0;
+%     end
   end
 end
 

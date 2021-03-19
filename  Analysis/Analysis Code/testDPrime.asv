@@ -107,20 +107,17 @@ preStim bins.
   
 	numF = length(FATrialTimeMS);
   dT = 500;
+  binEdgesMS = 0:dT:file.preStimMaxMS;
+	x = binEdgesMS(1:end - 1) + dT / 2.0;
  
   % Produce a linear fit to trials unavailable for false alarms because they were consumed by hits or misses. 
   % The normal assumption is that available trials go to zero at preStimMaxMS, but that is not always the case.  
-  binEdgesMS = file.preStimMinMS:dT:file.preStimMaxMS;
-	x = binEdgesMS(1:end - 1) + dT / 2.0;
-  y = histcounts([stimOnHMS, stimOnMMS], binEdgesMS);   % combined hit and miss stimOn distributions
-  coeff = polyfit(x, y, 1);
-  preStimMaxFrac = (file.preStimMaxMS * coeff(1) + coeff(2)) / coeff(2);
+	stimOnHMMS = [stimOnHMS, stimOnMMS];                  % combined hit and miss stimOn distributions
+  y = histcounts(FATrialTimeMS, binEdgesMS);
   
   % adjust for the abbreviated trials
-  binEdgesMS = 0:dT:file.preStimMaxMS;
-	x = binEdgesMS(1:end - 1) + dT / 2.0;
   y = histcounts(FATrialTimeMS, binEdgesMS);
-  y = adjustForShortTrials(y, binEdgesMS, file.preStimMinMS, file.preStimMaxMS, preStimMaxFrac);
+  y = adjustForShortTrials(y, binEdgesMS, file.preStimMinMS, file.preStimMaxMS);
   
   % fit() doesn't work well if there are a lot of y == 0 entries at the end of the sequence.  These are undersampled,
   % and they can't be corrected for the number of short trials. 
@@ -144,10 +141,11 @@ end
 
 %%
 %%
-function y = adjustForShortTrials(y, binEdgesMS, minMS, maxMS, preStimMaxFrac)
+function y = adjustForShortTrials(y, binEdgesMS, minMS, maxMS)
 %
 % Adjust for abbreviated trials
 %
+
   % The bins that occur entirely before minMS need no adjustment at all
   b = 1;
   while b < length(binEdgesMS) - 1 && binEdgesMS(b + 1) < minMS 
@@ -157,15 +155,15 @@ function y = adjustForShortTrials(y, binEdgesMS, minMS, maxMS, preStimMaxFrac)
   % The first bin spans minMS needs special handling.  The fraction of that bin before minMS needs no adjustment,
   % but a proportional adjustment is needed for the fraction after minMS.
   adjust = (minMS - binEdgesMS(b)) / diff(binEdgesMS(b:b + 1));              % portion before minMS
-  fullFrac = 1.0 - mean([binEdgesMS(b + 1), minMS])  * (1.0 - preStimMaxFrac) / (maxMS - minMS); % frac full trials in changing part of bin
+  fullFrac = 1.0 - mean([binEdgesMS(b + 1), minMS]) / (maxMS - minMS); % frac full trials in changing part of bin
   adjust = adjust + fullFrac * (binEdgesMS(b + 1) - minMS) / diff(binEdgesMS(b:b + 1));
   y(b) = y(b) / adjust;
   b = b + 1;
   
   % The remaining bins have a linearly changing number of short trials across their full width.
   for b = b:length(binEdgesMS) - 1
-    fullFrac = 1.0 - (mean(binEdgesMS(b:b + 1)) - minMS) * (1.0 - preStimMaxFrac) / (maxMS - minMS); % average full trials across entire bin
-    y(b) = y(b) / fullFrac;
+    fullFrac = 1.0 - (mean(binEdgesMS(b:b + 1)) - minMS) / (maxMS - minMS); % average full trials across entire bin
+      y(b) = y(b) / fullFrac;
   end
 end
 

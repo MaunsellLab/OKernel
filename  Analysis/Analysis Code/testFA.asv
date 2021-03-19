@@ -1,36 +1,81 @@
 function testFA
+%{
+Simulate Poisson false alarms and reconstruct the rate parameter.  Poisson events have delays that are distributed
+exponentially, so fitting an exponential to the distribution yields the rate parameter.  Many of our tasks involve
+stimuli appearing after uniformly-distributed random delays.  False alarms can only occur before those stimuli, so
+stimulus occurrences effectively truncate the detection of later false alarms.  Because the random stimulus timing
+is is uniformly distributed, it is straightforward to compensate for these truncated trials.
 
-minMS = 0;          % minimum prestim time
-maxMS = 3000;         % maximum prestim time
-tooFastMS = 0;
-pH = 0.5;             % probability of a hit
-repsPerLambda = 100;  % number of repetitions
-numTrials = 1000;
-lambdas = [0.005, 0.001, 0.0005];        % rate of 1/s for a time period of 1 ms
+This test displays three runs of the simulation.  The first has full trials with no truncations.  The performance
+is good.  The second has truncated, uncorrected trials, for which the rate is systematically overestimated, particularly
+for low rates. The third has truncated trials with false alarm counts that have been compensated for the truncation.
+This works w
+%}
+  minMS = 500;          % minimum prestim time
+  maxMS = 3000;         % maximum prestim time
+  repsPerLambda = 100;  % number of repetitions
+  numTrials = 100;
+  dT = 100;
+  lambdas = [0.0005:0.00025:0.0020];      % rate of 1/s for a time period of 1 ms
+  funcs = {@doFullFit, @doTruncFit, @doTruncCorrFit};
+  titles = {'Full Length Trials', 'Trials Truncated by StimOn', ...
+    'Trials Truncated by StimOn and Corrected for Truncation'};
+  f1 = figure(1);
+  set(gcf, 'units', 'inches', 'position', [27, 10.0, 7.5, 10]);
+  clf;
+  f2 = figure(2);
+  set(gcf, 'Units', 'inches', 'Position', [27, 0.5, 7.5, 10]);
+  clf;
+  
+  numFunctions = length(funcs);
+  meanFits = zeros(numFunctions, length(lambdas));
+  medianFits = zeros(numFunctions, length(lambdas));
+  quartiles = zeros(numFunctions, length(lambdas), 2);
+  for f = 1:numFunctions
+    for l = 1:length(lambdas)
+      fitL = zeros(1, repsPerLambda);
+      numF = zeros(1, repsPerLambda);
+      for r = 1:repsPerLambda
+        while numF(r) == 0                  % zero returned when there are too few points to fit
+          [fitted, numF(r), x, y] = funcs{f}(lambdas(l), numTrials, minMS, maxMS, dT);
+        end
+        fitL(r) = -fitted.b;
+        if f == 1 && r == 1
+          figure(f2);
+          subplot(4, 3, l);
+          plot(fitted, x, y);
+          hl = findobj(gcf,'type','legend');
+          delete(hl);
+          xlabel('Time (ms)');
+          ylabel('');
+          xlim([0, maxMS]);
+          text(0.95, 0.95, sprintf('L = %.5f', lambdas(l)), 'Units', 'Normalized', 'horizontalAlignment', 'right',...
+            'verticalAlignment', 'top', 'fontSize', 12);
+        end
+      end
+      meanFits(f, l) = mean(fitL);
+      medianFits(f, l) = median(fitL);
+      quartiles(f, l, :) = prctile(fitL, [25, 75]);
+      fprintf(' Actual %.5f, median (IQR) fit = %.5f (%.5f-%0.5f) (average Fs = %.1f)\n', ...
+        lambdas(l), medianFits(f, l), quartiles(f, l,:), mean(numF));
+    end
 
-for l = 1:length(lambdas)
-  lambda = lambdas(l);
-  fitL = zeros(1, repsPerLambda);
-%   unFitL = zeros(1, repsPerLambda);
-  numF = zeros(1, repsPerLambda);
-  for r = 1:repsPerLambda
-    while numF(r) == 0
-      [fitted, numF(r), x, y] = doTruncFit(lambda, numTrials, minMS, maxMS, tooFastMS);
-    end
-    fitL(r) = -fitted.b;
-    if mod(r,10) == 0
-      figure(2);
-      clf;
-      rows = 2;
-      subplot(rows, 1, 1);
-      plot(fitted, x, y);
-    end
+    figure(f1);
+    subplot(numFunctions, 1, f);
+    errorbar(lambdas, medianFits(f, :), medianFits(f, :) - quartiles(f, :, 1), quartiles(f, :, 2) - medianFits(f, :), ...
+      'o', 'MarkerFaceColor', 'b', 'MarkerEdgeColor', 'k');
+    a = axis;
+    aMax = max(a(3:4));
+    axis([0, aMax, 0, aMax]);
+    hold on;
+    h1 = plot([0, aMax], [0, aMax], ':k');
+    text(0.05, 0.95, {sprintf('minStimMS %d', minMS), sprintf('maxStimMS %d', maxMS), sprintf('%d Trials', numTrials),...
+      sprintf('%d fits per Lambda', repsPerLambda)}, 'Units', 'Normalized', 'verticalAlignment', 'top', ...
+      'fontSize', 14);
+    xlabel('Actual Lambda');
+    ylabel('Fitted Lambda');
+    title(titles{f});
   end
-  fprintf(' Actual %.5f, L fit = %.5f SEM %.5f (average Fs = %.1f)\n', lambda, mean(fitL), std(fitL)/sqrt(repsPerLambda), mean(numF));
-end
-
-% dprime(pH, numF / numTrials)
-
 end
 
 %%
@@ -61,7 +106,33 @@ function y = adjustForShortTrials(y, binEdgesMS, minMS, maxMS)
 end
 
 %%
-function [fitted, numF, x, y] = doTruncFit(lambda, numTrials, minMS, maxMS, tooFastMS)
+function [fitted, numF, x, y] = doFullFit(lambda, numTrials, ~, maxMS, dT)
+%
+% Do fits with trials that have no truncations
+%
+  numF = 0;
+  pF = lambda * exp(-lambda); % Poisson probability for (1) F
+  delaysMS = [];
+  for n = 1:numTrials
+    for t = 1:maxMS
+      if rand() < pF
+        delaysMS = [delaysMS, t]; %#ok<*AGROW>
+        numF = numF + 1;
+        break;
+      end
+    end
+  end
+  binEdgesMS = 0:dT:maxMS;
+  y = histcounts(delaysMS, binEdgesMS); % counts adjusted for bin widths
+  x = binEdgesMS(1:end - 1) + dT / 2.0;
+  lastY = find(y > 0, 1, 'last' );
+  y = y(1:lastY)';
+  x = x(1:lastY)';
+  fitted = fit(x, y, 'exp1', 'startPoint', [0, 0]);
+end
+
+%%
+function [fitted, numF, x, y] = doTruncCorrFit(lambda, numTrials, minMS, maxMS, dT)
 %
 % Fits where the trials stop early, uniformly between minMS and maxMS
 %
@@ -78,8 +149,6 @@ function [fitted, numF, x, y] = doTruncFit(lambda, numTrials, minMS, maxMS, tooF
       end
     end
   end
-  
-  dT = 100;
   numF = length(delaysMS);
   binEdgesMS = 0:dT:maxMS;
   x = binEdgesMS(1:end - 1) + dT / 2.0;
@@ -97,130 +166,32 @@ function [fitted, numF, x, y] = doTruncFit(lambda, numTrials, minMS, maxMS, tooF
 end
 
 %%
-function [unfitL, fitL, numF] = doFit(lambda, numTrials, minMS, maxMS, tooFastMS, doPlots)
-
-numF = 0;
-% numH = 0;
-numEdges = 11;
-pF = lambda * exp(-lambda); % Poisson probability for (1) F
-
-delaysMS = [];
-stimMSs = zeros(1, numTrials);
-for n = 1:numTrials
-  stimMS = minMS + (n - 1) * (maxMS - minMS) / (numTrials - 1);
-  stimMSs(n) = stimMS;
-  stimMSs(n) = maxMS;
-%   f = false;
-  for t = 1:stimMS + tooFastMS
-    if rand() < pF
-      delaysMS = [delaysMS, t]; %#ok<*AGROW>
-      numF = numF + 1;
-%       f = true;
-      break;
-    end
-  end
-%   if ~f
-%     if rand() < pH
-%       numH = numH + 1;
-%     end
-%   end
-end
-
-binEdgesMS = prctile(delaysMS, 0:100 / (numEdges - 1):100);           % edges surrounding bins
-binWidthsMS = diff(binEdgesMS);                                       % width of each bin
-binMiddlesMS = binEdgesMS(1:numEdges - 1) + binWidthsMS / 2.0;        % middle of each bin
-y = histcounts(delaysMS, binEdgesMS) ./ binWidthsMS * binWidthsMS(1); % counts adjusted for bin widths
-
-weights = zeros(1, numEdges - 1);
-for b = 1:numEdges - 1
-  if binMiddlesMS(b) < minMS
-    weights(b) = 1.0;
-  else
-    weights(b) = 1.0 - (binMiddlesMS(b) - minMS) * (1.0 - 1.0 / numTrials) / (maxMS - minMS);
-  end
-end
-yCorrected = y ./ weights;
-
-% dT = 250;
-% edges = 0:dT:maxMS;
-% trialWeights = zeros(1, length(edges) - 1);
-% b = 2;
-% while edges(b) < minMS                        % t < minMS always contributes to possible Fs
-%   trialWeights(b - 1) = 1.0;
-%   b = b + 1;
-% end
-% give the bin straddling minMS a fraction of full trials, and a fraction of declining trials
-% trialWeights(b - 1) = (minMS - edges(b - 1)) / dT;
-% binMiddle = edges(b) - (edges(b) - minMS) / 2;
-% trialWeights(b - 1) = trialWeights(b - 1) +(1.0 - binMiddle * (1.0 - 1.0 / numTrials) / (maxMS - minMS)) * (edges(b) - minMS) / dT;
-% for b = b + 1:length(edges)
-%   binMiddle = edges(b) - dT / 2;
-%   trialWeights(b - 1) = 1.0 - (binMiddle - minMS) * (1.0 - 1.0 / numTrials) / (maxMS - minMS);
-% end
-% y = histcounts(delaysMS, edges);
-% x = edges(1:end - 1) + dT / 2.0;
-% lastY = find(y > 0, 1, 'last' );
-% y = y(1:lastY)';
-% x = x(1:lastY)';
-unfit = fit(binMiddlesMS', y', 'exp1');
-unfitL = -unfit.b;
-fitted = fit(binMiddlesMS', yCorrected', 'exp1');
-fitL = -fitted.b;
-
-% plot(f, x, y);
-% xlim([0, maxMS]);
-% y = y ./ trialWeights(1:lastY)';
-% f = fit(x, y, 'exp1');
-% fitL = -f.b;
-if doPlots
-  figure(2);
-  clf;
-  rows = 2;
-  subplot(rows, 1, 1);
-  plot(unfit, binMiddlesMS, y);
-  xlim([0, maxMS]);
-  hold on;
-  % subplot(rows, 1, 2);
-  plot(fitted, binMiddlesMS, yCorrected);
-  % xlim([0, maxMS]);
-end
-
-end
-%%
-function [fitL, numF] = doPureFits(lambda, numTrials, minMS, maxMS, tooFastMS, doPlots)
-
-  numF = 0;
-  % numH = 0;
+function [fitted, numF, x, y] = doTruncFit(lambda, numTrials, minMS, maxMS, dT)
+%
+% Fits where the trials stop early, uniformly between minMS and maxMS
+%
   pF = lambda * exp(-lambda); % Poisson probability for (1) F
-
   delaysMS = [];
   stimMSs = zeros(1, numTrials);
   for n = 1:numTrials
-    stimMSs(n) = maxMS;
+    stimMS = minMS + (n - 1) * (maxMS - minMS) / (numTrials - 1);
+    stimMSs(n) = stimMS;                    % truncate trial at stimOn time
     for t = 1:stimMSs(n)
       if rand() < pF
         delaysMS = [delaysMS, t]; %#ok<*AGROW>
-        numF = numF + 1;
         break;
       end
     end
   end
-
-  dT = 100;
+  numF = length(delaysMS);
   binEdgesMS = 0:dT:maxMS;
-  y = histcounts(delaysMS, binEdgesMS); % counts adjusted for bin widths
   x = binEdgesMS(1:end - 1) + dT / 2.0;
+  y = histcounts(delaysMS, binEdgesMS);
+
+  % fit() doesn't work well if there are a lot of y == 0 entries at the end of the sequence.  These are undersampled,
+  % and they can't be corrected for the number of short trials. 
   lastY = find(y > 0, 1, 'last' );
   y = y(1:lastY)';
   x = x(1:lastY)';
   fitted = fit(x, y, 'exp1', 'startPoint', [0, 0]);
-  fitL = -fitted.b;
-
-  if doPlots
-    figure(2);
-    clf;
-    rows = 2;
-    subplot(rows, 1, 1);
-    plot(fitted, x, y);
-  end
 end

@@ -440,9 +440,6 @@ function psychometric(dParams, trials, trialStructs)
   delay0 = [trialStructs(:).optoIndex] == 1;
   delay0Hits = zeros(1, numStim);
   delay0N = zeros(1, numStim);
-  %delay1 = [trialStructs(:).optoIndex] == 2;
-  %delay1Hits = zeros(1, numStim);
-  %delay1N = zeros(1, numStim);
   noStimHits = zeros(1, numStim);
   noStimN = zeros(1, numStim);
   for s = 1:numStim                                          % for each stim value

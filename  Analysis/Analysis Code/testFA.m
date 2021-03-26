@@ -13,7 +13,7 @@ for low rates. The third has truncated trials with false alarm counts that have 
   minMS = 500;          % minimum prestim time
   maxMS = 3000;         % maximum prestim time
   repsPerLambda = 100;  % number of repetitions
-  numTrials = 5000;
+  numTrials = 100;
   dT = 500;
   lambdas = [0.0005:0.00025:0.0020];      % rate of 1/s for a time period of 1 ms
   funcs = {@doFullFit, @doTruncFit, @doTruncCorrFit};

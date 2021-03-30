@@ -31,11 +31,10 @@ for low rates. The third has truncated trials with false alarm counts that have 
         indices.correct = find([trials(:).trialEnd] == 0);      % correct trials
         indices.fa = find([trials(:).trialEnd] == 1);           % false alarm trials
         indices.miss = find([trials(:).trialEnd] == 2);         % miss trials
-        estimates(i) = FARate(file, trials, indices);
+        estimates(i) = earlyRate(file, trials, indices);
       end
       percentiles(:, r) = prctile(estimates, [25, 50, 75]);
     end
-%     subplot(length(pHits), 1, p);
     errorbar(rateFAs, percentiles(2, :), percentiles(2, :) - percentiles(1, :), percentiles(2, :) - percentiles(3, :), ...
       'o', 'MarkerFaceColor', 'b', 'MarkerEdgeColor', 'k');
     hold on;
@@ -53,7 +52,7 @@ for low rates. The third has truncated trials with false alarm counts that have 
 end
 
 %%
-function rateS = FARate(file, trials, indices)
+function rateS = earlyRate(file, trials, indices)
   
   trialStructs = [trials(:).trial];                       % trial structs extracted from trials array
   preStimMS = [trialStructs(:).preStimMS];                % planned stimulus on time

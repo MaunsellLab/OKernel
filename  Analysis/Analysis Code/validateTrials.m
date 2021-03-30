@@ -11,10 +11,10 @@ function trials = validateTrials(row, trials)
 	if isfield(trialStructs, 'pulseContrast')                               % some files have pulseContrast as well
     numPulseContrast = length([trialStructs(:).pulseContrast]);           % get pulse contrast applied on each trial
     if numPulseContrast < numTrials
-      fprintf('  %s %s: adding %d missing pulseContrasts\n', row.animal, row.date, numTrials - numPulseContrast);
+%       fprintf('  %s %s: adding %d missing pulseContrasts\n', row.animal, row.date, numTrials - numPulseContrast);
       for t = 1:numTrials
         if isempty(trials(t).trial.pulseContrast)
-          fprintf('     trial %d of %d\n', t, numTrials);
+%           fprintf('     trial %d of %d\n', t, numTrials);
           trials(t).trial.pulseContrast = -1;
         end
       end

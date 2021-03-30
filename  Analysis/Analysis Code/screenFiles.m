@@ -72,6 +72,7 @@ function screenFiles
               limits.animal = animals{a};
               limits.minTrials = t;
               limits.minDec = d;
+              limits.oneDay = [];
               doOneCase(mode, dataDirName, tableDataName, oneDay, limits);
             end
           end

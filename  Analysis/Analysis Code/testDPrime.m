@@ -37,44 +37,38 @@ preStim bins.
   limits.oneDay = [];
   limits.minSessions = 0;
 	[U, ~] = getSubset('normal', dataDirName, tableDataName, [], limits);
-%   for i = 1:height(U)
-  for i = 26:100
-    processFile(dataDirName + U.animal(i) + '/MatFiles/' + U.date(i) + '.mat');
+  for i = 1:height(U)
+    matFileName = dataDirName + U.animal(i) + '/MatFiles/' + U.date(i) + '.mat';
+    processFile(i, U, matFileName);
+%     fprintf('File %d of %d pH %.2f, pFA %.2f, d'' %.2f\n', i, height(U), pH, pFA, dPrime);
+    folderName = strcat(dataDirName, ' Analysis/Figures/D-Primes/') + U.animal(i);
+    if ~exist(folderName, 'dir')
+       mkdir(folderName);
+    end
+    saveas(gcf, folderName + '/' + U.date(i) + '.pdf')
   end
 end
 
-function processFile(fileName)
-  load(fileName, 'file', 'trials');
-  OKMatlab([], file, trials);                             % display the results
+function processFile(i, U, matFileName)
+  load(matFileName, 'file', 'trials');
+%   OKMatlab([], file, trials);                             % display the results
   
-  indices.correct = find([trials(:).trialEnd] == 0);      % correct trials
-  indices.fa = find([trials(:).trialEnd] == 1);           % false alarm trials
-  indices.miss = find([trials(:).trialEnd] == 2);         % miss trials
+  indices.correct = [trials(:).trialEnd] == 0;              % correct trials
+  indices.fa = [trials(:).trialEnd] == 1;                   % false alarm trials
+  indices.miss = [trials(:).trialEnd] == 2;                 % miss trials
+  [respLimitsMS, indices, fitCum, endCumTimeMS] = getResponseLimits(file, trials, indices);
   numFs = length(indices.fa);
-  trialStructs = [trials(:).trial];                       % trial structs extracted from trials array
-  preStimMS = [trialStructs(:).preStimMS];                % planned stimulus on time
-  tooFastMS = file.tooFastMS;
+  trialStructs = [trials(:).trial];                         % trial structs extracted from trials array
+  preStimMS = [trialStructs(:).preStimMS];                  % planned stimulus on time
   
-  stimOnHMS = preStimMS(indices.correct);                 % stimOn for hits
+  stimOnHMS = preStimMS(indices.correct);                   % stimOn for hits
   stimOnMMS = preStimMS(indices.miss);
   stimOnFMS = preStimMS(indices.fa);
-  RTs = [trials(indices.fa).reactTimeMS];
-  if length(RTs) > length(indices.fa)
-    for t = 1:length(indices.fa)
-      if length(trials(t).reactTimeMS) > 1
-        trials(t).reactTimeMS = trials(t).reactTimeMS(1);
-      end
-    end
-    RTs = [trials(indices.fa).reactTimeMS];
-  end
-  FTrialTimesMS = stimOnFMS + RTs;
+  RTs = oneRTMSPerTrial(trials, indices.fa);
   
-%   FTrialTimeMS = FTrialTimeMS(FTrialTimeMS > file.preStimMinMS);
-    
+  FTrialTimesMS = stimOnFMS + RTs;
   dT = 250;
-%   histEdges = 1:tInc:file.preStimMaxMS + tooFastMS;
   edges = file.preStimMinMS:dT:file.preStimMaxMS;
-  % compile a histogram of the hit rate as a function of stimOn time.
   h = zeros(1, length(edges));
   n = zeros(1, length(edges));
   for t = 1:length(edges)
@@ -90,181 +84,21 @@ function processFile(fileName)
   figure(2);
 	set(gcf, 'units', 'inches', 'position', [27, 10.0, 7.5, 10]);    
   clf;
-  
   hColor = [0.0, 0.7, 0.0];
   mColor = [0.3, 0.2, 0.0];
   fColor = [0.8, 0.0, 0.0];
  
   doOnePlot(2, edges, pH, negCI, posCI, 'Hit Rate', 'StimOn Time', hColor);  
-  doOneHist(3, stimOnHMS, sprintf('Hits (n=%d)', length(indices.correct)), 'StimOn Time', hColor);
-  doOneBar(4, sprintf('H+M (n=%d)', length(indices.correct) + length(indices.miss)), 'StimOn Time', file, dT, ...
+	RTPDF(3, file, trials, indices, respLimitsMS, fitCum, endCumTimeMS);
+  doOneBar(4, sprintf('H+M (n=%d)', sum(indices.correct) + sum(indices.miss)), 'StimOn Time', file, dT, ...
     {stimOnMMS, stimOnHMS}, {mColor, hColor});
-	doOneHist(5, stimOnMMS, sprintf('Misses (n=%d)', length(indices.miss)), 'StimOn Time', mColor);
-  doOneBar(6, sprintf('H+M+FA (n=%d)', length(indices.correct) + length(indices.miss) + numFs), ...
+  RTHistogram(5, file, trials, indices, endCumTimeMS);
+  doOneBar(6, sprintf('H+M+FA (n=%d)', sum(indices.correct) + sum(indices.miss) + numFs), ...
     'StimOn Time (reached or unreached)', file, dT, {stimOnFMS, stimOnMMS, stimOnHMS}, {fColor, mColor, hColor});
-	doOneHist(7, stimOnFMS, sprintf('FAs (n=%d)', numFs), '(Unreached) StimOn for FA', fColor);
-
-  % Produce a linear fit to trials unavailable for false alarms because they were consumed by hits or misses. 
-  % The normal assumption is that available trials go to zero at preStimMaxMS, but that is not always the case. 
-  
-%   binEdgesMS = file.preStimMinMS:dT:file.preStimMaxMS;
-% 	x = binEdgesMS(1:end - 1) + dT / 2.0;
-%   y = histcounts([stimOnHMS, stimOnMMS], binEdgesMS);   % combined hit and miss stimOn distributions
-%   coeff = polyfit(x, y, 1);
-%   preStimMaxFrac = ((file.preStimMaxMS + tooFastMS) * coeff(1) + coeff(2)) / coeff(2);
-%   subplot(4, 2, 4);
-%   hold on;
-%   plot([file.preStimMinMS, file.preStimMaxMS], ...
-%     [file.preStimMinMS * coeff(1) + coeff(2), file.preStimMaxMS * coeff(1) + coeff(2)]);
-  
-  % adjust for the abbreviated trials
-%   binEdgesMS = file.preStimMinMS + tooFastMS:dT:file.preStimMaxMS + tooFastMS;
-%   binEdgesMS = file.preStimMinMS:dT:file.preStimMaxMS + tooFastMS;
-% 	x = binEdgesMS(1:end - 1) + dT / 2.0;
-%   y = histcounts(FTrialTimesMS, binEdgesMS);
-%   y = adjustForShortTrials(y, binEdgesMS, file.preStimMinMS + tooFastMS, file.preStimMaxMS + tooFastMS, preStimMaxFrac);
-   [x, y, varY, n, l2] = correctedFACounts(FTrialTimesMS, [stimOnHMS, stimOnMMS], file, dT);
-
-   % fit() doesn't work well if there are a lot of y == 0 entries at the end of the sequence.  These are undersampled,
-  % and they can't be corrected for the number of short trials. 
-%   lastY = find(y > 0, 1, 'last' );
-%   y = y(1:lastY)';
-%   x = x(1:lastY)';
-  fitted = fit(x', y', 'exp1', 'startPoint', [0, 0], 'weight', n);
-  subplot(4, 2, 8);
-  hold on;
-  plot(fitted, x, y);
-  hl = findobj(gcf,'type','legend');
-  delete(hl);
-  xlabel('Time (ms)');
-  ylabel('');
-  axis([0, file.preStimMaxMS + tooFastMS, 0, inf]);
   doOneHist(8, FTrialTimesMS, sprintf('FAs (n=%d)', numFs), 'FA Time from Trial Start (ms)', fColor);
-  
-  hitRate = length(indices.correct) / (length(indices.correct) + length(indices.miss));
-%   header(file, hitRate, -fitted.b);
-  header(file, hitRate, l2 / 1000.0);
-
-  sameYAxisScaling(4, 2, [3, 5, 7]);
+ 
+  header(i, U, file);
   sameYAxisScaling(4, 2, [4, 6]);
-
-end
-
-%%
-% function y = adjustForShortTrials(y, binEdgesMS, minMS, maxMS, preStimMaxFrac)
-% %
-% % Adjust for abbreviated trials
-% %
-%   % The bins that occur entirely before minMS need no adjustment at all
-%   b = 1;
-%   while b < length(binEdgesMS) - 1 && binEdgesMS(b + 1) < minMS 
-%     b = b + 1;
-%   end
-%   
-%   % The first bin spans minMS needs special handling.  The fraction of that bin before minMS needs no adjustment,
-%   % but a proportional adjustment is needed for the fraction after minMS.
-%   adjust = (minMS - binEdgesMS(b)) / diff(binEdgesMS(b:b + 1));              % portion before minMS
-%   fullFrac = 1.0 - mean([binEdgesMS(b + 1), minMS])  * (1.0 - preStimMaxFrac) / (maxMS - minMS); % frac full trials in changing part of bin
-%   adjust = adjust + fullFrac * (binEdgesMS(b + 1) - minMS) / diff(binEdgesMS(b:b + 1));
-%   y(b) = y(b) / adjust;
-%   b = b + 1;
-%   
-%   % The remaining bins have a linearly changing number of short trials across their full width.
-%   for b = b:length(binEdgesMS) - 1
-%     fullFrac = 1.0 - (mean(binEdgesMS(b:b + 1)) - minMS) * (1.0 - preStimMaxFrac) / (maxMS - minMS); % average full trials across entire bin
-%     y(b) = y(b) / fullFrac;
-%   end
-% end
-
-%%
-function [x, y, varY, numF, l2] = correctedFACounts(FTrialTimesMS, HMStimOnTimesMS, file, dT)
-%   
-% The times after hit/miss truncations need to be incremented in proportion to the fraction of trials
-% that have been truncated by hit/miss trials at that point. The fractional increment is based on a count
-% that excludes all trial for which a FA has already occurred for abbreviated trials
-%
-  numTrials = length(FTrialTimesMS) + length(HMStimOnTimesMS);
-	binEdgesMS = 0:dT:file.preStimMaxMS;
-	x = binEdgesMS(1:end - 1) + dT / 2.0;
-    
-  fprintf('Total Mean rate %.2f per second\n', 1000.0 / mean(FTrialTimesMS));
-  pastPreStim = FTrialTimesMS > file.preStimMinMS;
-  sumTime = sum(FTrialTimesMS(pastPreStim));
-  sumTime = sumTime + sum(HMStimOnTimesMS - file.preStimMinMS);
-  lambdaS = sumTime / length(FTrialTimesMS) / 1000.0;
-  
-%   lambdaS = 1000.0 / mean(FTrialTimesMS(pastPreStim));
-  fprintf('Prestim Onward Mean rate %.2f per second\n', lambdaS);
-  fprintf('  Sum post prestim: %.2f\n', sumTime);
-  fprintf('    N post prestim: %.0f\n', length(FTrialTimesMS));
-  integral = 1.0 / lambdaS;
-  fprintf('  integral  %.2f\n', integral);
-  truncX = exp(-lambdaS * file.preStimMaxMS / 1000.0);
-  truncIntegral = 1.0 / lambdaS * (truncX * log(truncX) - truncX + 1) + truncX * file.preStimMaxMS / 1000.0;
-  l2 = lambdaS;
-  while truncIntegral < integral
-    l2 = l2 - 0.01;
-    truncX = exp(-l2 * file.preStimMaxMS / 1000.0);
-    truncIntegral = 1.0 / l2 * (truncX * log(truncX) - truncX + 1) + truncX * file.preStimMaxMS / 1000.0;
-    fprintf('lambdaS %.4f, l2 %.4f, integral %.4f truncIntegral %.4f\n', lambdaS, l2, integral, truncIntegral);
-  end
-%   truncIntegral = 1.0 / lambdaS * (
-% Create 1 ms histograms for the times of FAs and the times when stim on truncated hit/miss trials.  We add
-% tooFastMS because a stimOn doesn't prevent a FA until after tooFastMS
-  fHist = zeros(1, file.preStimMaxMS + file.tooFastMS);
-  hmHist = zeros(1, file.preStimMaxMS + file.tooFastMS);
-  bins = length(FTrialTimesMS);
-  for b = 1:bins
-    if FTrialTimesMS(b) <= length(fHist)
-      fHist(FTrialTimesMS(b)) = fHist(FTrialTimesMS(b)) + 1;
-    end
-  end
-  bins = length(HMStimOnTimesMS);
-  for b = 1:bins
-    hmHist(HMStimOnTimesMS(b) + file.tooFastMS) = hmHist(HMStimOnTimesMS(b) + file.tooFastMS) + 1;
-  end
-  fCumHist = cumsum(fHist);
-  hmCumHist = cumsum(hmHist);
-  % weighting function that corrects for all the trials eliminated by hit/miss trials
-  fWeight = (numTrials - fCumHist) ./ (numTrials - fCumHist - hmCumHist);
-  
-  figure(3);
-  clf;
-  plot(numTrials - fCumHist);
-  hold on;
-  plot(numTrials - fCumHist - hmCumHist);
-  ylim([0, inf]);
-  
-  figure(4);
-  clf;
-  plot(fWeight);
-  
-  corrected = fHist .* fWeight;
-  
-  figure(5);
-  clf;
-  plot(corrected);
-  
-  figure(2)
-  
-  % Bin the weighted FAs using the bin edges provided
-  y = zeros(1, length(binEdgesMS) - 1);
-  numF = zeros(1, length(binEdgesMS) - 1);
-
-  for b = 1:length(binEdgesMS) - 1
-    y(b) = sum(corrected(max(1, binEdgesMS(b)):min(length(corrected), binEdgesMS(b + 1) - 1)));
-    numF(b) = sum(fHist(max(1, binEdgesMS(b)):min(length(corrected), binEdgesMS(b + 1) - 1)));
-  end
-  % fit() doesn't work well if there are a lot of y == 0 entries at the end of the sequence.  These are undersampled,
-  % and they can't be corrected for the number of short trials. 
-  lastY = find(y > 0, 1, 'last' );
-  y = y(1:lastY);
-  x = x(1:lastY);
-  numF = numF(1:lastY);
-  
-  pFA = y / numTrials / (length(binEdgesMS) - 1);
-  varY = (pFA .* (1.0 - pFA)) ./ numF;
-  l2 = 1.0 / l2;
 end
 
 %%
@@ -310,19 +144,55 @@ function doOnePlot(plotIndex, x, y, negCI, posCI, theTitle, theXLabel, faceColor
 end
 
 %%
-function [dP, c] = dPrime(pH, pFA)
-%
-% Compute d-prime based on hits and false alarms 
-%
-% convert to Z scores and calculate d-prime and criterion
-  zH = -sqrt(2) .* erfcinv(2 * pH);
-  zFA = -sqrt(2) .* erfcinv(2 * pFA);
-  dP = zH - zFA ;
-  c = -0.5 * (zH + zFA);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% RT PDF %%%
+
+function RTPDF(plotIndex, file, trials, indices, respLimitsMS, fitCum, endCumTimeMS)
+ 
+  allRTs = [[trials(indices.correct).reactTimeMS], [trials(indices.fa).reactTimeMS],  [trials(indices.miss).reactTimeMS]];
+  if isempty(allRTs)
+    return
+  end
+  % Set the time limits
+  startTime = -file.preStimMinMS;
+  endTime = min(file.responseLimitMS, endCumTimeMS);
+  
+  subplot(4, 2, plotIndex);
+  cla;
+  cdfplot(allRTs);
+  set(gca, 'XLim', [startTime, endTime], 'YLim', [0 1]);
+  yLimits = get(gca, 'YLim');
+  hold on;
+  plot(startTime:endTime - 1, fitCum, 'Color', 0.5 * [1 0 0]);
+  plot(respLimitsMS(1) * [1 1], yLimits, ':', 'Color', 0.5 * [1 0 0]);
+  plot(respLimitsMS(2) * [1 1], yLimits, ':', 'Color', 0.5 * [1 0 0]);
+   plot([0 0], yLimits, 'k');
+  if isfield(file, 'tooFastMS')
+    plot(double(file.tooFastMS) * [1 1], yLimits, '--', 'Color', 0.5 * [0 1 0]);
+  end
+ if isfield(file, 'rewardedLimitMS')
+    plot(double(file.rewardedLimitMS) * [1 1], yLimits, '--', 'Color', 0.5 * [1 0 0]);
+  elseif isfield(file, 'reactMS')
+    plot(double(file.reactMS) * [1 1], yLimits, '--', 'Color', 0.5 * [1 0 0]);
+  end
+  if isfield(file, 'responseLimitMS')
+    plot(double(file.responseLimitMS) * [1 1], yLimits, '--', 'Color', 0.5 * [1 0 0]);
+  end
+  if isfield(file, 'kernelRTMinMS')
+    plot(double(file.kernelRTMinMS) * [1 1], yLimits, ':', 'Color', 0.5 * [0 1 0]);
+  end
+  if isfield(file, 'kernelRTMaxMS')
+    plot(double(file.kernelRTMaxMS) * [1 1], yLimits, ':', 'Color', 0.5 * [1 0 0]);
+  end
+  text(0.05, 0.95, sprintf('Resp. limits\n%.0f -- %.0f ms', respLimitsMS), 'units', 'normalized', ...
+    'horizontalAlignment', 'left', 'verticalAlignment', 'top');
+  title('Cumulative Reaction Times');
+  xlabel('');
+  ylabel('');
 end
 
 %%
-function header(file, pH, lambda)
+function header(i, U, file)
 
   axisHandle = subplot(4, 2, 1);
   set(axisHandle, 'Visible', 'off');
@@ -342,14 +212,76 @@ function header(file, pH, lambda)
     headerText{length(headerText) + 1} = sprintf('Response window: %d -- %d ms', ...
         file.tooFastMS, file.reactMS);
   end
-	headerText{length(headerText) + 1} = sprintf('FA/s %.2f', lambda * 1000.0);
-	pFA = 1.0 - exp(-lambda * (file.rewardedLimitMS - file.tooFastMS));
-	headerText{length(headerText) + 1} = sprintf('FA rate %.2f', pFA);
-  headerText{length(headerText) + 1} = sprintf('Raw hit rate %.2f', pH);
-  pHtrue = (pH - pFA) / (1.0 - pFA);
-	headerText{length(headerText) + 1} = sprintf('True hit rate %.2f', pHtrue);
-  [dP, c] = dPrime(pHtrue, pFA);
-	headerText{length(headerText) + 1} = sprintf('d-prime = %.2f; criterion %.2f', dP, c);
+  headerText{length(headerText) + 1} = sprintf('Response window %.0f ms', U.RTWindowMS(i));
+  headerText{length(headerText) + 1} = sprintf('Nostim: pHit %.2f; pFA %.2f; d'' %.2f, c %.2f', ...
+    U.noStimPHit(i), U.noStimPFA(i), U.noStimDPrime(i), U.noStimC(i));
+  headerText{length(headerText) + 1} = sprintf('Stim:   pHit %.2f; pFA %.2f; d'' %.2f, c %.2f', ...
+    U.stimPHit(i), U.stimPFA(i), U.stimDPrime(i), U.stimC(i));
+	headerText{length(headerText) + 1} = sprintf('  Stim d'' change: %.2f', ...
+    U.noStimDPrime(i) - U.stimDPrime(i));
+
+%   [dP, c] = dprime(pHtrue, pFA);
+% 	headerText{length(headerText) + 1} = sprintf('d-prime = %.2f; criterion %.2f', dP, c);
+%   
+% 	earlyRate = earlyRate(file, trials, indices.correct, indices.miss, indices.fa);
+%   hitRate = sum(indices.correct) / (sum(indices.correct) + sum(indices.miss));
 
   text(0.00, 1.00, headerText, 'VerticalAlignment', 'top');
+end
+
+%%
+function RTHistogram(plotIndex, file, trials, indices, endCumTimeMS)
+
+ subplot(4, 2, plotIndex);
+ cla;
+ hold on;
+ if sum(indices.correct) == 0
+     correctRTs = -10000;                  % make sure we don't get an empty matrix from histc
+ else
+     correctRTs = [trials(indices.correct).reactTimeMS];
+ end
+ if sum(indices.fa) == 0
+    wrongRTs = -10000;                  % make sure we don't get an empty matrix from histc
+ else
+    wrongRTs = [trials(indices.fa).reactTimeMS];
+ end
+ if sum(indices.miss) == 0
+    missRTs = -10000;                  % make sure we don't get an empty matrix from histc
+ else
+    allMissRTs = [trials(indices.miss).reactTimeMS];
+    missRTs = allMissRTs(allMissRTs > 0);
+ end
+ timeLimit = min(file.responseLimitMS, endCumTimeMS);
+ edges = linspace(-1000, timeLimit, 25);
+ nCorrect = histc(correctRTs, edges);
+ nWrong = histc(wrongRTs, edges);
+ nMiss = histc(missRTs, edges);
+ if sum(nCorrect) + sum(nWrong) + sum(nMiss) > 0
+    binSize = edges(2) - edges(1);
+    bH = bar(edges + binSize / 2, [nCorrect(:), nMiss(:), nWrong(:)], 'stacked');
+    set(bH, 'barWidth', 1, 'lineStyle', 'none');
+    set(bH(1), 'FaceColor', [0 0 0.6]);
+    set(bH(2), 'FaceColor', [0.6 0 0]);
+    set(bH(3), 'faceColor', [0.6 0 0]);
+    yLimits = get(gca, 'YLim');                % vertical line at stimulus on
+    plot([0 0], yLimits, 'k');
+    if isfield(file, 'tooFastMS')
+        llH = plot(double(file.tooFastMS) * [1 1], yLimits, 'k--');
+        set(llH, 'Color', 0.5 * [0 1 0]);
+    end
+    if isfield(file, 'rewardedLimitMS')
+      llH = plot(double(file.rewardedLimitMS) * [1 1], yLimits, 'r--');
+      set(llH, 'Color', 0.5 * [1 0 0]);
+    elseif isfield(file, 'reactMS')
+      llH = plot(double(file.reactMS) * [1 1], yLimits, 'r--');
+      set(llH, 'Color', 0.5 * [1 0 0]);
+    end
+    if isfield(file, 'responseLimitMS')
+        llH = plot(double(file.responseLimitMS) * [1 1], yLimits, 'r--');
+        set(llH, 'Color', 0.5 * [1 0 0]);
+    end
+ end
+ set(gca, 'XLim', [-file.preStimMinMS, timeLimit]);
+ xlabel('Time Relative to Stimulus');
+ title('Reaction Times');
 end

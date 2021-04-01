@@ -14,6 +14,12 @@ function xLimits = sameXAxisScaling(subPlotRows, subPlotColumns, subPlots, presc
       allXLimits(p, :) = xlim;
   end
   if nargin >= 4                % if we're given limits, just apply them
+    if prescribedLimits(1) == inf
+      prescribedLimits(1) = min(allXLimits(:, 1));
+    end
+    if prescribedLimits(2) == inf
+      prescribedLimits(2) = max(allXLimits(:, 2));
+    end
     xLimits = prescribedLimits;
   else                          % otherwise, find the max and min across all the plots
     xLimits = [min(allXLimits(:, 1)), max(allXLimits(:, 2))];

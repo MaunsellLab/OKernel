@@ -7,6 +7,7 @@ function doOneBootPlot(bootstraps, limits, type, startTimeMS, endTimeMS, plotTit
 
   bootKernel = bootstrp(limits.numBoot, @mean, bootstraps);
   PCs = prctile(bootKernel, [5, 50, 95]);
+  PCs = prctile(bootKernel, [15.9, 50, 84.1]);
   PCMeans = mean(PCs, 2);
   CIs = zeros(3, size(bootstraps, 2));
   for c = 1:3

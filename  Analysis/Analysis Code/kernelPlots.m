@@ -16,15 +16,15 @@ function kernelPlots
   % that also didn't help
   
 	mode = 'normal';           	% standard plots
-% 	mode = 'control';         	% control sessions with offset fiber
-% 	mode = 'prePostControl';      % before and after control sessions
+% 	mode = 'control';        	% control sessions with offset fiber
+% 	mode = 'prePostControl'; 	% before and after control sessions
 
-	limits.numBoot = 10;     	% number of boot strap runs
+	limits.numBoot = 10;        % number of boot strap runs
 
   dataDirName = '/Users/Shared/Data/OKernel/';
   limits.oneDay = [];
   switch mode
-    case {'normal', 'test'}
+    case {'normal'}
       rampLimits = [0];
       limits.minSessions = 0;
     otherwise
@@ -32,78 +32,64 @@ function kernelPlots
   end
   
 % All animals, step and ramp
-	animals = {'All'};
+% 	animals = {'All'};
   
 % Performance of individual step animals
-%   rampLimits = 0;
-% 	animals = {'866', '902', '905', '1112', '1145', '1150', '1218', '1220', '1223', '1257'};
+  rampLimits = 0;
+	animals = {'902', '905', '1150', '1145', '1112'};
 
 % Performance of individual ramp animals (not used in a figure)
 %     rampLimits = 500;
-%   	animals = {'902', '1112', '1145', '1150', '1181', '1218', '1220', '1257'};
+%   	animals = {'902', '1150', '1218', '1220'};
 
 % Example session
 %   animals = {'902'};
 %   limits.oneDay = '2019-10-10';
 
 % Set up to plot the selected sessions
+  limits.criterion = 0.0;                         % no criterion requirement on kernel significance
+  limits.minTrials = 0;                           % no minimum number of trials
   switch mode
-  case 'test'
-    RTMinMS = 200; RTMaxMS = 500; minTrials = 0; minDecrement = 0;
-    peakCutoff = 0; rampMS = 0;
-    tableDataName = [dataDirName ' Analysis/Test Files.mat'];            
-    [U, ~] = getSubset(mode, dataDirName, tableDataName, animals, rampMS, minTrials, minDecrement, limits.oneDay);
-    if size(U, 1) == 0
-        fprintf('No valid sessions found for rampMS %d and threshold factor %.2f\n', rampMS, peakCutoff);
-    else
-        headerText = 'Test mode';
-        doOneFigure(U, dataDirName, RTMinMS, RTMaxMS, headerText);
+    case 'normal'
+      modeStr = '';
+      limits.minSessions = 10;                    % require at least 8 sessions for each animal
+      limits.minDec = 0.10;                       % stim trials can't have better performance
+    case 'control'
+      modeStr = ' Control';
+      limits.minSessions = 0;                    	% no minimum for control sessions
+      limits.minDec = -1;                       	% no performance limit for control sessions
+    case 'prePostControl'
+      modeStr = ' PrePostControl';
+      limits.minSessions = 0;                     % no minimum for control sessions
+      limits.minDec = -1;                       	% no performance limit for control sessions
+  end
+
+  % If we're doing multiple animals, prepare a second page so that we can collect up all the total kernels and
+  % display them together at the same scaling
+
+  if length(animals) > 1
+    limits.fig = figure(2);
+    set(limits.fig, 'Units', 'inches', 'Position', [25, 11.25, 8.5, 11]);
+    clf;
+    for s = 1:length(animals)
+      limits.ax(s) = subplot(4, 3, s);
+      limits.ax(s).Visible = 'Off';
     end
-  case {'normal', 'control', 'prePostControl'}
-   	limits.criterion = 0.0;                         % no criterion requirement on kernel significance
-    limits.minTrials = 0;                           % no minimum number of trials
-    switch mode
-      case 'normal'
-        modeStr = '';
-        limits.minSessions = 8;                    	% require at least 8 sessions for each animal
-        limits.minDec = 0;                              % stim trials can't have better performance
-      case 'control'
-        modeStr = ' Control';
-        limits.minSessions = 0;                    	% no minimum for control sessions
-        limits.minDec = -1;                       	% no performance limit for control sessions
-      case 'prePostControl'
-        modeStr = ' PrePostControl';
-        limits.minSessions = 0;                     % no minimum for control sessions
-        limits.minDec = -1;                       	% no performance limit for control sessions
+  end
+
+  for r = rampLimits
+    for a = 1:length(animals)
+      limits.rampMS = r;
+      limits.animal = animals{a};
+      limits.aniNum = a;
+      doOneCase(mode, dataDirName, sprintf('Ramp %d%s', limits.rampMS, modeStr), limits);
     end
-    
-    % If we're doing multiple animals, prepare a second page so that we can collect up all the total kernels and
-    % display them together at the same scaling
-    
-    if length(animals) > 1
-      limits.fig = figure(2);
-      set(limits.fig, 'Units', 'inches', 'Position', [25, 11.25, 8.5, 11]);
-      clf;
-      for s = 1:length(animals)
-        limits.ax(s) = subplot(4, 3, s);
-        limits.ax(s).Visible = 'Off';
-      end
-    end
-    
-    for r = rampLimits
-      for a = 1:length(animals)
-        limits.rampMS = r;
-        limits.animal = animals{a};
-        limits.aniNum = a;
-        doOneCase(mode, dataDirName, sprintf('Ramp %d%s', limits.rampMS, modeStr), limits);
-      end
-    end
-    
-    if length(animals) > 1
-      figure(2);
-      sameYAxisScaling(4, 3, 1:length(animals));
-      saveas(gcf, [dataDirName, ' Analysis/Figures/', sprintf('Ramp %d%s Individuals.pdf', limits.rampMS, modeStr)]);
-    end
+  end
+
+  if length(animals) > 1
+    figure(2);
+    sameYAxisScaling(4, 3, 1:length(animals));
+    saveas(gcf, [dataDirName, ' Analysis/Figures/', sprintf('Ramp %d%s Individuals.pdf', limits.rampMS, modeStr)]);
   end
 end
 
@@ -201,90 +187,18 @@ function doOneFigure(U, dataDirName, dataName, limits, bootstraps)
   end
   correctRTs = cat(2, U.correctRTs{:});
   wrongRTs = cat(2, U.wrongRTs{:});
-  missRTs = cat(2, U.missRTs{:});
-  [RTMinMS, RTMaxMS, ~, ~] = getRTParams(limits.rampMS);
-  doRTHistogramPlot(correctRTs, wrongRTs, missRTs, RTMinMS, RTMaxMS, minRespTimeMS, maxRespTimeMS);
-  doRTPDFPlot(correctRTs, wrongRTs, missRTs, RTMinMS, RTMaxMS, minRespTimeMS, maxRespTimeMS)
+  failRTs = cat(2, U.failRTs{:});
+  doRTHistogramPlot(correctRTs, wrongRTs, failRTs, minRespTimeMS, maxRespTimeMS);
+  doRTPDFPlot(correctRTs, wrongRTs, failRTs, minRespTimeMS, maxRespTimeMS)
 
   % Coordinate the scaling across plots
   sameYAxisScaling(4, 3, [4, 5, 7, 8, 10]);
   sameYAxisScaling(4, 3, [6, 9]);
-  
-  % compute overall hit and FA rates
-  
-  numStim = sum(U.numStim);
-  numStimHits = sum(U.hits);
-  numStimMisses = sum(U.misses);
-  stimHitRate = numStimHits / (numStimHits + numStimMisses);
-  stimHitRateSE = sqrt(stimHitRate * (1 - stimHitRate) / (numStimHits + numStimMisses));
-  stimFARate = sum(U.FAs) / numStim;
-  stimFARateSE = sqrt(stimFARate * (1 - stimFARate) / numStim);
 
-  numNoStim = sum(U.numNoStim);
-  numNoStimHits = sum(U.noStimHits);
-  numNoStimMisses = sum(U.noStimMisses);
-  noStimHitRate = numNoStimHits / (numNoStimHits + numNoStimMisses);
-  noStimHitRateSE = sqrt(noStimHitRate * (1 - noStimHitRate) / (numNoStimHits + numNoStimMisses));
-  noStimFARate = sum(U.noStimFAs) / numNoStim;
-  noStimFARateSE = sqrt(noStimFARate * (1 - noStimFARate) / numNoStim);
-  
-  % display header text
-  
-  headerText = cell(1, 7);
-  if limits.rampMS == 0
-    headerText{1} = sprintf('Visual Stimulus Step');
-  else
-    headerText{1} = sprintf('Visual Stimulus Ramp %d ms', limits.rampMS);
-  end
-	[RTMinMS, RTMaxMS, missMinMS, ~] = getRTParams(limits.rampMS);
-  headerText{2} = sprintf('Hit times \\geq%d and <%d ms', RTMinMS, RTMaxMS);
-  headerText{3} = sprintf('Miss times \\geq%d ms', missMinMS);
-  if strcmp(limits.animal, 'All')
-    headerText{4} = sprintf('%d sessions from %d animals', size(U, 1), length(unique(U.animal)));
-  else
-    headerText{4} = sprintf('%d sessions from Animal %s', size(U, 1), limits.animal);
-  end
-  headerText{5} = sprintf('%d bootstraps for CIs', limits.numBoot);
-  if limits.minDec == -1
-    headerText{6} = 'No required decrease in hit rate with opto';
-  else
-    headerText{6} = sprintf('Opto hits >=%.0f%% below unstim hits', limits.minDec * 100.0);
-  end
-
-  axisHandle = subplot(4, 3, 1);						% default axes are 0 to 1
-  set(axisHandle, 'visible', 'off');
-  set(axisHandle, 'outerPosition', [0.02 0.75, 0.25, 0.2]);
-  text(0.00, 1.25, 'OKernel', 'FontWeight', 'bold', 'FontSize', 16);
-  headerText{end + 1} = sprintf('Hit rate no stim %.3f (SE %.3f)\n                  stim %.3f (SE %.3f)', ...
-    noStimHitRate, noStimHitRateSE, stimHitRate, stimHitRateSE);
-  headerText{end + 1} = sprintf('FA rate no stim %.3f (SE %.3f)\n                  stim %.3f (SE %.3f)', ...
-    noStimFARate, noStimFARateSE, stimFARate, stimFARateSE);
-  text(0.00, 1.10, headerText, 'VerticalAlignment', 'top');
+  doHeader(U, limits);
   if ~isempty(limits.oneDay)
     saveas(gcf, [dataDirName, ' Analysis/Figures/', dataName, ' ', limits.animal, ' ', limits.oneDay, '.pdf']);
   else
     saveas(gcf, [dataDirName, ' Analysis/Figures/', dataName, ' ', limits.animal, '.pdf']);
-  end
-end
-
-%%
-function [RTMinMS, RTMaxMS, missMinMS, stimStr] = getRTParams(rampMS)
-
-  switch rampMS
-    case 0
-      RTMinMS = 200;
-      RTMaxMS = 500;
-      missMinMS = 750;
-     	stimStr = 'Steps';
-    case 500
-      RTMinMS = 200;
-      RTMaxMS = 500;
-      missMinMS = 750;
-      stimStr = 'Ramps';
-    otherwise
-      RTMinMS = 0;
-      RTMaxMS = 0;
-      missMinMS = 0;
-      stimStr = 'Unknown';
   end
 end

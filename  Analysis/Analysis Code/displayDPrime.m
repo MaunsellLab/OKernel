@@ -71,9 +71,6 @@ function displayDPrime
   clf;
   pIndex = 1;
   for a = 1:length(animals)
-    if strcmp(animals{a}, '905')
-      fprintf('here');
-    end
     thisAnimal = (U.animal == animals{a});
     if sum(thisAnimal) < 8
       continue;
@@ -89,4 +86,77 @@ function displayDPrime
     pIndex = pIndex + 1;
   end
   sameXAxisScaling(4, 4, 1:pIndex - 1)
+  
+  goodAnimals = {'1223', '902', '905', '1112', '1145'};
+  badAnimals = {'1218', '1220', '866', '1257', '1150', '1003', '1221', '844', '903'};
+
+  figure(5);
+  clf;
+  peaksVDDPrime(1, goodAnimals, U, 'Good Animals');
+  peaksVDDPrime(2, badAnimals, U, 'Bad Animals');
+  sameAxisScaling('xy', 2, 1, 1:2);
+  
+  figure(6);
+  clf;
+  peaksVDPrime(1, goodAnimals, U, 'Good Animals');
+  peaksVDPrime(2, badAnimals, U, 'Bad Animals');
+  sameAxisScaling('xy', 2, 1, 1:2);
+  
+  figure(7);
+  clf;
+  str = cell(1, length(animals));
+  for a = 1:length(animals)
+    indices = (U.animal == animals{a});
+    scatter(U.stimDPrime(indices), U.noStimDPrime(indices), 'filled');
+    hold on;
+    str{a} = sprintf('%s: %d', animals{a}, sum(indices));
+  end
+  text(0.05, 0.95, str, 'units', 'normalized', 'horizontalAlignment', 'left', 'verticalAlignment', 'top');
+  xlabel('stim d-prime');
+  ylabel('no stim d-prime');
+  legend(animals, 'location', 'southeast');
+  axis([-2, 4, -2, 4]);
+  hold on;
+  plot([-2, 4], [-2, 4], 'r-');
+end
+
+function peaksVDPrime(plotIndex, animals, U, theTitle)
+  
+  subplot(2, 1, plotIndex);
+  str = cell(1, length(animals));
+  for a = 1:length(animals)
+    thisAnimal = (U.animal == animals{a});
+    indices = thisAnimal & U.kernelPeak ~= 0;
+    stimHitRate = double(U.corrects(indices)) ./ double(U.corrects(indices) + U.fails(indices));
+    noStimHitRate = double(U.noStimCorrects(indices)) ./ double(U.noStimCorrects(indices) + U.noStimMisses(indices));
+    deltaDPrime = U.noStimDPrime(indices) - U.stimDPrime(indices);
+    scatter(deltaDPrime, noStimHitRate - stimHitRate, 'filled');
+    hold on;
+    str{a} = sprintf('%s: %d', animals{a}, sum(indices & U.noStimDPrime - U.stimDPrime > 0.0));
+  end
+  text(0.8, 0.50, str, 'units', 'normalized', 'horizontalAlignment', 'left', 'verticalAlignment', 'top');
+  xlabel('delta d-prime');
+  ylabel('delta hit rate');
+  title(theTitle);
+  legend(animals);
+end
+
+function peaksVDDPrime(plotIndex, animals, U, theTitle)
+  
+  subplot(2, 1, plotIndex);
+  str = cell(1, length(animals));
+  for a = 1:length(animals)
+    thisAnimal = (U.animal == animals{a});
+    indices = thisAnimal & U.kernelPeak ~= 0;
+    scatter(U.noStimDPrime(indices) - U.stimDPrime(indices), U.kernelPeak(indices), 'filled');
+    hold on;
+    str{a} = sprintf('%s: %d %.2f:%.2f', animals{a}, sum(indices), ...
+      mean(U.noStimDPrime(indices) - U.stimDPrime(indices)), ...
+      mean(U.kernelPeak(indices)));
+  end
+  text(0.8, 0.5, str, 'units', 'normalized', 'horizontalAlignment', 'left', 'verticalAlignment', 'top');
+  xlabel('delta d-prime');
+  ylabel('kernel peak (CIs)');
+  title(theTitle);
+  legend(animals);
 end

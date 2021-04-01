@@ -12,7 +12,7 @@ function [fileProfilesFast, fileProfilesSlow] = getOptoStimFastSlow(U, dataDirNa
     if exist('trials', 'var') && isfield(trials, 'trial')
       row = U(s, :);
       row.rampMS = trials(1).trial.visualRampDurMS;
-      [row.RTMinMS, row.RTMaxMS, row.missMinMS] = getRTParams(row.rampMS);
+      [row.RTMinMS, row.RTMaxMS, row.missdMinMS] = getRTParams(row.rampMS);
       [fastProfiles, slowProfiles] = getFileProfiles(file, trials, row);
       fileProfilesFast = [fileProfilesFast; fastProfiles]; %#ok<*AGROW>
       fileProfilesSlow = [fileProfilesSlow; slowProfiles];

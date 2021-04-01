@@ -40,7 +40,7 @@ preStim bins.
   for i = 1:height(U)
     matFileName = dataDirName + U.animal(i) + '/MatFiles/' + U.date(i) + '.mat';
     processFile(i, U, matFileName);
-%     fprintf('File %d of %d pH %.2f, pFA %.2f, d'' %.2f\n', i, height(U), pH, pFA, dPrime);
+    fprintf('File %d of %d pHit %.2f, pFA %.2f, d'' %.2f\n', i, height(U), U.pHit(i), U.pFA(i), U.dPrime(i));
     folderName = strcat(dataDirName, ' Analysis/Figures/D-Primes/') + U.animal(i);
     if ~exist(folderName, 'dir')
        mkdir(folderName);
@@ -54,17 +54,17 @@ function processFile(i, U, matFileName)
 %   OKMatlab([], file, trials);                             % display the results
   
   indices.correct = [trials(:).trialEnd] == 0;              % correct trials
-  indices.fa = [trials(:).trialEnd] == 1;                   % false alarm trials
-  indices.miss = [trials(:).trialEnd] == 2;                 % miss trials
+  indices.early = [trials(:).trialEnd] == 1;                   % false alarm trials
+  indices.fail = [trials(:).trialEnd] == 2;                 % miss trials
   [respLimitsMS, indices, fitCum, endCumTimeMS] = getResponseLimits(file, trials, indices);
-  numFs = length(indices.fa);
+  numFs = length(indices.early);
   trialStructs = [trials(:).trial];                         % trial structs extracted from trials array
   preStimMS = [trialStructs(:).preStimMS];                  % planned stimulus on time
   
   stimOnHMS = preStimMS(indices.correct);                   % stimOn for hits
-  stimOnMMS = preStimMS(indices.miss);
-  stimOnFMS = preStimMS(indices.fa);
-  RTs = oneRTMSPerTrial(trials, indices.fa);
+  stimOnMMS = preStimMS(indices.fail);
+  stimOnFMS = preStimMS(indices.early);
+  RTs = oneRTPerTrial(trials, indices.early);
   
   FTrialTimesMS = stimOnFMS + RTs;
   dT = 250;
@@ -90,10 +90,10 @@ function processFile(i, U, matFileName)
  
   doOnePlot(2, edges, pH, negCI, posCI, 'Hit Rate', 'StimOn Time', hColor);  
 	RTPDF(3, file, trials, indices, respLimitsMS, fitCum, endCumTimeMS);
-  doOneBar(4, sprintf('H+M (n=%d)', sum(indices.correct) + sum(indices.miss)), 'StimOn Time', file, dT, ...
+  doOneBar(4, sprintf('H+M (n=%d)', sum(indices.correct) + sum(indices.fail)), 'StimOn Time', file, dT, ...
     {stimOnMMS, stimOnHMS}, {mColor, hColor});
   RTHistogram(5, file, trials, indices, endCumTimeMS);
-  doOneBar(6, sprintf('H+M+FA (n=%d)', sum(indices.correct) + sum(indices.miss) + numFs), ...
+  doOneBar(6, sprintf('H+M+FA (n=%d)', sum(indices.correct) + sum(indices.fail) + numFs), ...
     'StimOn Time (reached or unreached)', file, dT, {stimOnFMS, stimOnMMS, stimOnHMS}, {fColor, mColor, hColor});
   doOneHist(8, FTrialTimesMS, sprintf('FAs (n=%d)', numFs), 'FA Time from Trial Start (ms)', fColor);
  
@@ -149,7 +149,7 @@ end
 
 function RTPDF(plotIndex, file, trials, indices, respLimitsMS, fitCum, endCumTimeMS)
  
-  allRTs = [[trials(indices.correct).reactTimeMS], [trials(indices.fa).reactTimeMS],  [trials(indices.miss).reactTimeMS]];
+  allRTs = [[trials(indices.correct).reactTimeMS], [trials(indices.early).reactTimeMS],  [trials(indices.fail).reactTimeMS]];
   if isempty(allRTs)
     return
   end
@@ -206,26 +206,20 @@ function header(i, U, file)
       headerText{1} = '(missing date field)';
   end
   if isfield(file, 'tooFastMS') && isfield(file, 'rewardedLimitMS')
-    headerText{length(headerText) + 1} = sprintf('Response window: %d -- %d ms', ...
+    headerText{length(headerText) + 1} = sprintf('React window: %d -- %d ms', ...
         file.tooFastMS, file.rewardedLimitMS);
   elseif isfield(file, 'tooFastMS') && isfield(file, 'reactMS')
-    headerText{length(headerText) + 1} = sprintf('Response window: %d -- %d ms', ...
+    headerText{length(headerText) + 1} = sprintf('React window: %d -- %d ms', ...
         file.tooFastMS, file.reactMS);
   end
   headerText{length(headerText) + 1} = sprintf('Response window %.0f ms', U.RTWindowMS(i));
-  headerText{length(headerText) + 1} = sprintf('Nostim: pHit %.2f; pFA %.2f; d'' %.2f, c %.2f', ...
-    U.noStimPHit(i), U.noStimPFA(i), U.noStimDPrime(i), U.noStimC(i));
-  headerText{length(headerText) + 1} = sprintf('Stim:   pHit %.2f; pFA %.2f; d'' %.2f, c %.2f', ...
-    U.stimPHit(i), U.stimPFA(i), U.stimDPrime(i), U.stimC(i));
+  headerText{length(headerText) + 1} = sprintf('pFA %.2f', U.pFA(i));
+  headerText{length(headerText) + 1} = sprintf('Nostim: pHit %.2f; d'' %.2f, c %.2f', ...
+    U.noStimPHit(i), U.noStimDPrime(i), U.noStimC(i));
+  headerText{length(headerText) + 1} = sprintf('Stim:   pHit %.2f; d'' %.2f, c %.2f', ...
+    U.stimPHit(i), U.stimDPrime(i), U.stimC(i));
 	headerText{length(headerText) + 1} = sprintf('  Stim d'' change: %.2f', ...
     U.noStimDPrime(i) - U.stimDPrime(i));
-
-%   [dP, c] = dprime(pHtrue, pFA);
-% 	headerText{length(headerText) + 1} = sprintf('d-prime = %.2f; criterion %.2f', dP, c);
-%   
-% 	earlyRate = earlyRate(file, trials, indices.correct, indices.miss, indices.fa);
-%   hitRate = sum(indices.correct) / (sum(indices.correct) + sum(indices.miss));
-
   text(0.00, 1.00, headerText, 'VerticalAlignment', 'top');
 end
 
@@ -240,15 +234,15 @@ function RTHistogram(plotIndex, file, trials, indices, endCumTimeMS)
  else
      correctRTs = [trials(indices.correct).reactTimeMS];
  end
- if sum(indices.fa) == 0
+ if sum(indices.early) == 0
     wrongRTs = -10000;                  % make sure we don't get an empty matrix from histc
  else
-    wrongRTs = [trials(indices.fa).reactTimeMS];
+    wrongRTs = [trials(indices.early).reactTimeMS];
  end
- if sum(indices.miss) == 0
+ if sum(indices.fail) == 0
     missRTs = -10000;                  % make sure we don't get an empty matrix from histc
  else
-    allMissRTs = [trials(indices.miss).reactTimeMS];
+    allMissRTs = [trials(indices.fail).reactTimeMS];
     missRTs = allMissRTs(allMissRTs > 0);
  end
  timeLimit = min(file.responseLimitMS, endCumTimeMS);

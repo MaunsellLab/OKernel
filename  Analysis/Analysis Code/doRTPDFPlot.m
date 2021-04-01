@@ -1,4 +1,4 @@
- function doRTPDFPlot(correctRTs, wrongRTs, missRTs, kernelRTMinMS, kernelRTMaxMS, minRespTimeMS, maxRespTimeMS)
+ function doRTPDFPlot(correctRTs, wrongRTs, missRTs, minRespTimeMS, maxRespTimeMS)
 
     subplot(4, 3, 3);
     cla;
@@ -11,8 +11,8 @@
     plot([0 0], yLimits, 'k');
     plot(double(minRespTimeMS) * [1 1], yLimits, '--', 'Color', 0.5 * [0 1 0]);
     plot(double(maxRespTimeMS) * [1 1], yLimits, '--', 'Color', 0.5 * [1 0 0]);
-    plot(double(kernelRTMinMS) * [1 1], yLimits, ':', 'Color', 0.5 * [0 1 0]);
-    plot(double(kernelRTMaxMS) * [1 1], yLimits, ':', 'Color', 0.5 * [1 0 0]);
+%     plot(double(kernelRTMinMS) * [1 1], yLimits, ':', 'Color', 0.5 * [0 1 0]);
+%     plot(double(kernelRTMaxMS) * [1 1], yLimits, ':', 'Color', 0.5 * [1 0 0]);
     xlabel('Time Relative to Stimulus');
     ylabel('');
     title('Cumulative Reaction Times');

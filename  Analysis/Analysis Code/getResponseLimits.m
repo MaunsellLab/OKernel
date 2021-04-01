@@ -19,15 +19,15 @@ function [respLimitsMS, newIndices, fitCum, endCumTimeMS] = getResponseLimits(fi
     return
   end
   % Set the time limits, and clip off the early and late RTs, keeping track of their numbers
-%   startTime = -1000;
   endCumTimeMS = 2000;
   startTime = -file.preStimMinMS;
   endTime = min(file.responseLimitMS, endCumTimeMS);
+
+  % make a cumulative distribution, using the early and late numbers to set the start and end points
   numTotal = length(allRTs);
   earlyRTs = allRTs < startTime;
   lateRTs = allRTs >= endTime;
   RTs = allRTs(~earlyRTs & ~lateRTs);
-  % make a cumulative distribution, using the early and late numbers to set the start and end points
   RTDist = zeros(1, endTime - startTime);
   for i = 1:length(RTs)
     bin = RTs(i) - startTime + 1;
@@ -63,6 +63,9 @@ function [respLimitsMS, newIndices, fitCum, endCumTimeMS] = getResponseLimits(fi
       RTs(t) = trials(t).reactTimeMS(1);
     end
   end
+  
+  % create new indices that make RTs before the newly found response interval earlies and those after the 
+  % newly found response intervals fails
   newIndices.correct = trialEnds == 0 & RTs >= respLimitsMS(1) & RTs < respLimitsMS(2);
   newIndices.early = trialEnds == 1 & RTs < respLimitsMS(1);
   newIndices.fail = trialEnds == 2 & RTs >= respLimitsMS(2);

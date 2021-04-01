@@ -1,4 +1,4 @@
- function doRTHistogramPlot(correctRTs, wrongRTs, missRTs, kernelRTMinMS, kernelRTMaxMS, minRespTimeMS, maxRespTimeMS)
+ function doRTHistogramPlot(correctRTs, wrongRTs, missRTs, minRespTimeMS, maxRespTimeMS)
  % Plot the aggregated RT histogram
     subplot(4, 3, 2);
     cla;
@@ -30,8 +30,8 @@
         plot([0 0], yLimits, 'k');
         plot(minRespTimeMS * [1 1], yLimits, '--', 'Color', 0.5 * [0 1 0]);
         plot(maxRespTimeMS * [1 1], yLimits, '--', 'Color', 0.5 * [1 0 0]);
-        plot(double(kernelRTMinMS) * [1 1], yLimits, ':', 'Color', 0.5 * [0 1 0]);
-        plot(double(kernelRTMaxMS) * [1 1], yLimits, ':', 'Color', 0.5 * [1 0 0]);
+%         plot(double(kernelRTMinMS) * [1 1], yLimits, ':', 'Color', 0.5 * [0 1 0]);
+%         plot(double(kernelRTMaxMS) * [1 1], yLimits, ':', 'Color', 0.5 * [1 0 0]);
     end
     set(gca, 'XLim', [-1000 timeLimit]);
     xlabel('Time Relative to Stimulus');

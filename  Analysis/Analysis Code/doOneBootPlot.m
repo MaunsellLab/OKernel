@@ -1,4 +1,4 @@
-function doOneBootPlot(bootstraps, limits, type, startTimeMS, endTimeMS, plotTitle, yLabel)
+function CIs = doOneBootPlot(bootstraps, limits, type, startTimeMS, endTimeMS, plotTitle, yLabel)
 
 	sampleFreqHz = 1000;
   filterLP = designfilt('lowpassfir', 'PassbandFrequency', 90 / sampleFreqHz, ...
@@ -6,14 +6,13 @@ function doOneBootPlot(bootstraps, limits, type, startTimeMS, endTimeMS, plotTit
     'DesignMethod','equiripple');
 
   bootKernel = bootstrp(limits.numBoot, @mean, bootstraps);
-  PCs = prctile(bootKernel, [5, 50, 95]);
-  PCs = prctile(bootKernel, [15.9, 50, 84.1]);
+%   PCs = prctile(bootKernel, [5, 50, 95]);
+  PCs = prctile(bootKernel, [15.9, 50, 84.1]);              % +/- 1 SEM
   PCMeans = mean(PCs, 2);
   CIs = zeros(3, size(bootstraps, 2));
   for c = 1:3
     CIs(c, :) = filtfilt(filterLP, PCs(c, :) - PCMeans(c)) + PCMeans(c);
   end
-%   subplot(4, 3, subIndex);
   cla reset;
   bins = size(bootstraps, 2);
   if bins < 25

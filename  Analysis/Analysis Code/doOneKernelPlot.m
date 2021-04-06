@@ -37,7 +37,7 @@ function profile = doOneKernelPlot(subIndex, profile, type, startTimeMS, endTime
       set(gca,'XTick', [0, -plotRTStartMS, bins]);
       set(gca, 'XTickLabel', {sprintf('%d', plotRTStartMS), '0', sprintf('%d', plotRTStartMS + plotEndMS - plotStartMS)});
       xlabel('Time Relative to RT');
-    case {'fa', 'FA'}
+    case {'early', 'Early'}
       set(gca,'XTick', [0, -plotRTStartMS, bins]);
       set(gca, 'XTickLabel', {sprintf('%d', plotRTStartMS), '0', sprintf('%d', plotRTStartMS + plotEndMS - plotStartMS)});
       xlabel('Time Relative to FA');

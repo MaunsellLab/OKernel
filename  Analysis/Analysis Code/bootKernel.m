@@ -70,7 +70,7 @@ function convOneStim(dataDirName, tableDataName, limits, bootSTA, typeName, plot
     load(fileName, 'fileProfiles');
   else
     % get a table with all the valid sessions.
-    [U, ~] = getSubset('normal', dataDirName, tableDataName, [], limits);
+    [U, ~] = getSubset('normal', dataDirName, tableDataName, limits);
     fileProfiles = getOptoStim(U, dataDirName, tableDataName, limits);
     save(fileName, 'fileProfiles');
   end

@@ -40,7 +40,7 @@ function doOneStim(dataDirName, tableDataName, limits, numBS, rep)
     load(fileName, 'fileProfiles');
   else
     % get a table with all the valid sessions.
-    [U, ~] = getSubset('normal', dataDirName, tableDataName, [], limits);
+    [U, ~] = getSubset('normal', dataDirName, tableDataName, limits);
     fileProfiles = getOptoStim(U, dataDirName);
     save(fileName, 'fileProfiles');
   end
@@ -57,7 +57,7 @@ function doOneStim(dataDirName, tableDataName, limits, numBS, rep)
     load(fileName, 'fileProfilesFast', 'fileProfilesSlow');
   else
     % get a table with all the valid sessions.
-    [U, ~] = getSubset('normal', dataDirName, tableDataName, [], limits);
+    [U, ~] = getSubset('normal', dataDirName, tableDataName, limits);
     [fileProfilesFast, fileProfilesSlow] = getOptoStimFastSlow(U, dataDirName);
     save(fileName, 'fileProfilesFast', 'fileProfilesSlow');
   end
@@ -80,7 +80,7 @@ function doOneStim(dataDirName, tableDataName, limits, numBS, rep)
     load(fileName, 'fileProfilesFastMiss', 'fileProfilesSlowMiss');
   else
     % get a table with all the valid sessions.
-    [U, ~] = getSubset('normal', dataDirName, tableDataName, [], limits);
+    [U, ~] = getSubset('normal', dataDirName, tableDataName, limits);
     [fileProfilesFastMiss, fileProfilesSlowMiss] = getOptoStimFastSlowMiss(U, dataDirName);
     save(fileName, 'fileProfilesFastMiss', 'fileProfilesSlowMiss');
   end

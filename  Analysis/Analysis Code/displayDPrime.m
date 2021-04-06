@@ -9,7 +9,7 @@ function displayDPrime
   limits.minDec = -1;
   limits.oneDay = [];
   limits.minSessions = 0;
-	[U, ~] = getSubset('normal', dataDirName, tableDataName, [], limits);
+	[U, ~] = getSubset('normal', dataDirName, tableDataName, limits);
   U.Properties.VariableNames
 
   figure(3);

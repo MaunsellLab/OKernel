@@ -135,7 +135,7 @@ function fileProfiles = getFileProfiles(file, trials, row)
 %       profiles = getStimProfiles(trials(faIndices), plotRTStartMS, plotRTStartMS + plotEndMS - plotStartMS, true, true);
 %       FASum(:) = normSum(profiles);
 %       row.FAs = size(profiles, 1);                  % getStimProfiles might reject some trials as too short
-%       row.FAKernel = {FASum / row.FAs};
+%       row.earlyKernel = {FASum / row.FAs};
 %   end
 
   % If we have hits and misses, save the hit, miss, total and random kernels.

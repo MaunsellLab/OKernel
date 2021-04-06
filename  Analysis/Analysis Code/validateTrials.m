@@ -31,10 +31,10 @@ function trials = validateOnField(row, trials, fieldName, defaultValue)
   end
   numTrials = length(trials);
   if numField < numTrials
-    fprintf('  %s %s: adding %d missing %s fields\n', row.animal, row.date, numTrials - numField, fieldName);
+%     fprintf('  %s %s: adding %d missing %s fields\n', row.animal, row.date, numTrials - numField, fieldName);
     for t = 1:numTrials
     	if ~isfield(trials, fieldName) || isempty(trials(t).(fieldName))
-        fprintf('     trial %d of %d\n', t, numTrials);
+%         fprintf('     trial %d of %d\n', t, numTrials);
         trials(t).(fieldName) = defaultValue;
       end
     end

@@ -25,18 +25,18 @@ function kernelPlots
   limits.oneDay = [];
   switch mode
     case {'normal'}
-      rampLimits = [0];
+      rampLimits = [500];
       limits.minSessions = 0;
     otherwise
       rampLimits = 0;
   end
   
 % All animals, step and ramp
-% 	animals = {'All'};
+	animals = {'All'};
   
 % Performance of individual step animals
-  rampLimits = 0;
-	animals = {'902', '905', '1150', '1145', '1112'};
+%   rampLimits = 0;
+% 	animals = {'902', '905', '1150', '1145', '1112'};
 
 % Performance of individual ramp animals (not used in a figure)
 %     rampLimits = 500;
@@ -82,7 +82,13 @@ function kernelPlots
       limits.rampMS = r;
       limits.animal = animals{a};
       limits.aniNum = a;
-      doOneCase(mode, dataDirName, sprintf('Ramp %d%s', limits.rampMS, modeStr), limits);
+      dataName = sprintf('Ramp %d%s', limits.rampMS);
+      [U, ~] = getSubset(mode, dataDirName, [dataDirName, ' Analysis/Mat Files/', dataName, '.mat'], limits);
+      if size(U, 1) == 0
+        return;
+      end
+      bootstraps = getCaseBootstraps(U, dataDirName, dataName, limits);
+      doOneFigure(U, dataDirName, dataName, limits, bootstraps);
     end
   end
 
@@ -94,18 +100,6 @@ function kernelPlots
 end
 
 %%
-function doOneCase(mode, dataDirName, dataName, limits)
-
-  [U, ~] = getSubset(mode, dataDirName, [dataDirName, ' Analysis/Mat Files/', dataName, '.mat'], limits.oneDay, limits);
-  if size(U, 1) == 0
-    return;
-  end
-  bootstraps = getCaseBootstraps(U, dataDirName, dataName, limits);
-  doOneFigure(U, dataDirName, dataName, limits, bootstraps);
-end
-
-%%
-
 function doOneFigure(U, dataDirName, dataName, limits, bootstraps)
   % Compile and plot the kernels
   display(U);
@@ -114,15 +108,15 @@ function doOneFigure(U, dataDirName, dataName, limits, bootstraps)
   h = figure(1);
   set(h, 'Units', 'inches', 'Position', [25, 1.25, 8.5, 11]);
   clf;
- 
   ylabel = 'Normalized Power';
   limits.yAxis = 0.5;
   
   % hit kernel
   numHits = size(bootstraps.hitProfiles, 1);
   plotTitle = sprintf('Hit Kernel (n=%d)', numHits);
-  ax = subplot(4, 3, 4);
-  doOneBootPlot(bootstraps.hitProfiles / 2 + 0.5, limits, 'stim', plotStartMS, plotEndMS, plotTitle, ylabel);
+  subplot(4, 3, 4);
+  CIs = doOneBootPlot(bootstraps.hitProfiles / 2 + 0.5, limits, 'stim', plotStartMS, plotEndMS, plotTitle, ylabel);
+  save([dataDirName, ' Analysis/Mat Files/', dataName, ' ', limits.animal, ' Hit Kernel'], 'CIs');
   
   % miss kernel
   numMisses = size(bootstraps.missProfiles, 1);
@@ -145,6 +139,7 @@ function doOneFigure(U, dataDirName, dataName, limits, bootstraps)
     h.Title.String = strrep(h.Title.String, 'Weight by Trial', ['Animal ', limits.animal]);
     figure(1);
   end
+  
   % RT aligned kernel
   limits.yAxis = 0.5;
   plotTitle = sprintf('RT Aligned (n=%d)', numHits);
@@ -186,10 +181,10 @@ function doOneFigure(U, dataDirName, dataName, limits, bootstraps)
       maxRespTimeMS = max(maxRespTimeMS, file.rewardedLimitMS);
   end
   correctRTs = cat(2, U.correctRTs{:});
-  wrongRTs = cat(2, U.wrongRTs{:});
+  earlyRTs = cat(2, U.earlyRTs{:});
   failRTs = cat(2, U.failRTs{:});
-  doRTHistogramPlot(correctRTs, wrongRTs, failRTs, minRespTimeMS, maxRespTimeMS);
-  doRTPDFPlot(correctRTs, wrongRTs, failRTs, minRespTimeMS, maxRespTimeMS)
+  doRTHistogramPlot(correctRTs, earlyRTs, failRTs, minRespTimeMS, maxRespTimeMS);
+  doRTPDFPlot(correctRTs, earlyRTs, failRTs, minRespTimeMS, maxRespTimeMS)
 
   % Coordinate the scaling across plots
   sameYAxisScaling(4, 3, [4, 5, 7, 8, 10]);

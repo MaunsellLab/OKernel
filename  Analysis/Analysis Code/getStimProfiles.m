@@ -5,11 +5,11 @@ function stimProfiles = getStimProfiles(trials, startTimeMS, endTimeMS, normaliz
 % arrays. If "normalize" is true, the power profiles will be normalized between zero and one. "alignRT" true aligns
 % the profiles on the reaction time, rather than the stimulus on time.
 
-% if we are RT aligned, we have to check that we have enough time on each trial to span the full kernel.  This isn't
-% a problem for proper RT alignment, for for FA alignment, the RT could come very close to the start of the trial.
+% When we are RT aligned, we must check that we have enough time on each trial to span the full kernel.  This isn't
+% a problem for proper RT alignment. For for early alignment, the RT could approach the start of the trial.
 % The "prepend" code will fill in the blank with the value in the first bin, but this means that a few trials that
 % do this filling on most of the kernel can dominate, causing an artificial, progressing offset.  To avoid this,
-% we screen for these trials and eliminated them
+% we screen for these trials and eliminated them.
   
   if nargin < 5
     alignRT = false;
@@ -47,7 +47,7 @@ function stimProfiles = getStimProfiles(trials, startTimeMS, endTimeMS, normaliz
 %{
     The stimProfile is an integral number of pulses long.  We need to pad it out at the head and tail to make it 
     have a length of (endTimeMS - startTimeMS).  This is all pretty simple to implement if the startBin isn't the
-    first bin.  That shouldn't really happen, but when it does, we need to take special measures.  This is mostly
+    first bin.  That shouldn't really happen, but it does, and we need to take special measures.  This is mostly
     because the first bin (uniquely) is not guaranteed to be pulseDurMS from the second bin (phase is randomized
     on each trial by inserting a partial bin at the start of the sequence.
 %}
@@ -66,8 +66,8 @@ function stimProfiles = getStimProfiles(trials, startTimeMS, endTimeMS, normaliz
     else
         stimProfiles(t, :) = [prepend, stimProfile];
     end
-  % We have to normalize each trial individually, because the user might change the mean power
-    % during the day and move it above the max for some trials
+    % We must normalize each trial individually, because the user might change the mean power
+    % during the day and move it above the anticipated max for some trials
     if normalize
       stimProfiles(t, stimProfiles(t, :) < meanPower) = 0;
       stimProfiles(t, stimProfiles(t, :) >= meanPower) = 1;

@@ -36,7 +36,7 @@ preStim bins.
   limits.minDec = -1;
   limits.oneDay = [];
   limits.minSessions = 0;
-	[U, ~] = getSubset('normal', dataDirName, tableDataName, [], limits);
+	[U, ~] = getSubset('normal', dataDirName, tableDataName, limits);
   for i = 1:height(U)
     matFileName = dataDirName + U.animal(i) + '/MatFiles/' + U.date(i) + '.mat';
     processFile(i, U, matFileName);

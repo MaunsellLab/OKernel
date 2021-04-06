@@ -21,7 +21,7 @@ function screenFiles
   dataDirName = '/Users/Shared/Data/OKernel/';
 	tableDataName = [dataDirName ' Analysis/Processed Files.mat'];
   minLimits = 10;
-  oneDay = [];
+  limits.oneDay = [];
   switch mode
     case {'normal'}
       rampLimits = [0];
@@ -29,7 +29,6 @@ function screenFiles
     otherwise
       rampLimits = 0;
       decLimits = -1;
-      oneDay = [];
   end
   
 % All animals, step and ramp
@@ -45,11 +44,10 @@ function screenFiles
 
 % Example session
 %   animals = {'902'};
-%   oneDay = '2019-10-10';
+%   limits.oneDay = '2019-10-10';
 
 % Set up to plot the selected sessions
   limits.minSessions = 10;                         % require at least n sessions for each animal
-	limits.oneDay = [];
   for r = rampLimits
     limits.rampMS = r;
     for c = 0.0
@@ -60,7 +58,7 @@ function screenFiles
           limits.minTrials = t;
           for d = decLimits
             limits.minDec = d;
-            doCase(mode, dataDirName, tableDataName, oneDay, limits);
+            doCase(mode, dataDirName, tableDataName, limits);
           end
         end
       end
@@ -69,9 +67,9 @@ function screenFiles
 end
 
 %%
-function doCase(mode, dataDirName, tableDataName, oneDay, limits)
+function doCase(mode, dataDirName, tableDataName, limits)
 
-  [U, ~] = getSubset(mode, dataDirName, tableDataName, oneDay, limits);
+  [U, ~] = getSubset(mode, dataDirName, tableDataName, limits);
   if size(U, 1) == 0
     fprintf('No valid sessions found for rampMS %d, animal %s minTrials %d and delta-d'' %.2f\n', ...
       limits.rampMS, limits.animal, limits.minTrials, limits.minDec);
@@ -109,58 +107,59 @@ function doFigure(U, dataDirName, limits)
   % hit kernel
 	offset = 0.5;
   ylabel = 'Normalized Power';
-  % hit kernel
-  numHits = sum(U.corrects);
-  plotTitle = sprintf('Hit Kernel (n=%d)', numHits);
-  hitCI = stimCI(numHits);
-  hitKernel = sum(cell2mat(U.hitKernel) .* double(U.corrects), 1) / numHits;
-  doOneKernelPlot(4, hitKernel, 'stim', plotStartMS, plotEndMS, plotTitle, ylabel, offset + hitCI, offset - hitCI);
+  
+  % correct kernel
+  numCorrect = sum(U.stimCorrects);
+  plotTitle = sprintf('Hit Kernel (n=%d)', numCorrect);
+  correctCI = stimCI(numCorrect);
+  correctKernel = sum(cell2mat(U.hitKernel) .* double(U.stimCorrects), 1) / numCorrect;
+  doOneKernelPlot(4, correctKernel, 'stim', plotStartMS, plotEndMS, plotTitle, ylabel, offset + correctCI, offset - correctCI);
 
-  % miss kernel
-  numMisses = sum(U.fails);
-  plotTitle = sprintf('Miss Kernel (n=%d)', numMisses);
-  missCI = stimCI(numMisses);
-  failKernel = sum(cell2mat(U.failKernel) .* double(U.fails), 1) / numMisses;
-  doOneKernelPlot(5, failKernel, 'stim', plotStartMS, plotEndMS, plotTitle, '', offset + missCI, offset - hitCI);
+  % fail kernel
+  numFails = sum(U.stimFails);
+  plotTitle = sprintf('Miss Kernel (n=%d)', numFails);
+  missCI = stimCI(numFails);
+  failKernel = sum(cell2mat(U.failKernel) .* double(U.stimFails), 1) / numFails;
+  doOneKernelPlot(5, failKernel, 'stim', plotStartMS, plotEndMS, plotTitle, '', offset + missCI, offset - correctCI);
 
-  % total kernel trials weighted across all trials. We need to multiple the weighted sum by 2 because it is effectively
+  % total kernel trial-weighted across all trials. We need to multiple the weighted sum by 2 because it is effectively
   % a mean of the hit and miss kernels, not a difference. By taking the mean, we lose the doubling that we should get
   % from the opposing effects.  This has been validated in simulations. 
-  plotTitle = sprintf('Weight by Trial (n=%d)', numHits + numMisses);
-  kernel = (sum((cell2mat(U.hitKernel) - 0.5) .* double(U.corrects), 1) - ...
-      sum((cell2mat(U.failKernel) - 0.5) .* double(U.fails), 1)) / sum(U.corrects + U.fails) * 2;
-  totalCI = stimCI(sum(U.corrects + U.fails));
+  plotTitle = sprintf('Neuro-Behav Kernel (n=%d)', numCorrect + numFails);
+  kernel = (sum((cell2mat(U.hitKernel) - 0.5) .* double(U.stimCorrects), 1) - ...
+      sum((cell2mat(U.failKernel) - 0.5) .* double(U.stimFails), 1)) / sum(U.stimCorrects + U.stimFails) * 2;
+  totalCI = stimCI(sum(U.stimCorrects + U.stimFails));
   kernel = doOneKernelPlot(6, kernel, 'stim', plotStartMS, plotEndMS, plotTitle, '', totalCI, -totalCI);
   sigmas = min(kernel) / -totalCI * 1.96;                   % use 95% CI to get SEMs of kernel peak
   
   % RT aligned kernel
-  plotTitle = sprintf('RT Aligned (n=%d)', numHits);
+  plotTitle = sprintf('RT Aligned (n=%d)', numCorrect);
   doOneKernelPlot(7, mean(cell2mat(U.RTKernel), 1), 'RT', plotRTStartMS, plotRTStartMS + plotEndMS - plotStartMS, ...
-      plotTitle, ylabel, offset + hitCI, offset - hitCI);
+      plotTitle, ylabel, offset + correctCI, offset - correctCI);
 
   % Stim-RT aligned kernel
-  plotTitle = sprintf('Stim-RT Aligned (n=%d)', numHits);
+  plotTitle = sprintf('Stim-RT Aligned (n=%d)', numCorrect);
   doOneKernelPlot(10, mean(cell2mat(U.SRTKernel), 1), 'stimRT', plotRTStartMS, plotRTStartMS + plotEndMS - plotStartMS, ...
-      plotTitle, ylabel, offset + hitCI, offset - hitCI);
+      plotTitle, ylabel, offset + correctCI, offset - correctCI);
 
-  % FA kernel. There might be some sessions with no FA, so we must clear them out
+  % Early kernel. There might be some sessions with no early releases, so we clear them out
   kernelLength = zeros(1, size(U, 1));
   for index = 1:size(U, 1)
-      kernelLength(index) = size(U.FAKernel{index}, 2);
+      kernelLength(index) = size(U.earlyKernel{index}, 2);
   end
   validIndices = find(kernelLength > 1);
   if ~isempty(validIndices)
-      FAKernel = U.FAKernel(validIndices);
-      FAs = sum(U.earlies(validIndices));
-      plotTitle = sprintf('FA aligned (n=%d)', sum(FAs));
-      faCI = stimCI(FAs);
-      doOneKernelPlot(8, mean(cell2mat(FAKernel), 1), 'FA', plotStartMS, plotEndMS, plotTitle, '', ...
-              offset + faCI, offset - faCI);
+      earlyKernels = U.earlyKernel(validIndices);
+      numEarlies = sum(U.stimEarlies(validIndices));
+      plotTitle = sprintf('Early aligned (n=%d)', numEarlies);
+      earlyCI = stimCI(numEarlies);
+      doOneKernelPlot(8, mean(cell2mat(earlyKernels), 1), 'early', plotStartMS, plotEndMS, plotTitle, '', ...
+              offset + earlyCI, offset - earlyCI);
   end
 
   % Random Kernel
-  if numHits > 0 && numMisses > 0
-      plotTitle = sprintf('Random Kernel (n=%d)', numHits + numMisses);
+  if numCorrect > 0 && numFails > 0
+      plotTitle = sprintf('Random Kernel (n=%d)', numCorrect + numFails);
       doOneKernelPlot(9, mean(cell2mat(U.randomKernel), 1), 'stim', plotStartMS, plotEndMS, plotTitle, '', ...
         totalCI, -totalCI);
   end  
@@ -175,10 +174,10 @@ function doFigure(U, dataDirName, limits)
       maxRespTimeMS = max(maxRespTimeMS, file.rewardedLimitMS);
   end
   correctRTs = cat(2, U.correctRTs{:});
-  wrongRTs = cat(2, U.wrongRTs{:});
-  missRTs = cat(2, U.failRTs{:});
-  doRTHistogramPlot(correctRTs, wrongRTs, missRTs, minRespTimeMS, maxRespTimeMS);
-  doRTPDFPlot(correctRTs, wrongRTs, missRTs, minRespTimeMS, maxRespTimeMS)
+  earlyRTs = cat(2, U.earlyRTs{:});
+  failRTs = cat(2, U.failRTs{:});
+  doRTHistogramPlot(correctRTs, earlyRTs, failRTs, minRespTimeMS, maxRespTimeMS);
+  doRTPDFPlot(correctRTs, earlyRTs, failRTs, minRespTimeMS, maxRespTimeMS)
 
   % Coordinate the scaling across plots
   sameYAxisScaling(4, 3, [4, 5, 7, 8, 10]);
@@ -186,21 +185,21 @@ function doFigure(U, dataDirName, limits)
   
   % compute overall hit and FA rates
   
-  numStim = sum(U.numStim);
-  numStimHits = sum(U.corrects);
-  numStimMisses = sum(U.fails);
-  stimHitRate = numStimHits / (numStimHits + numStimMisses);
-  stimHitRateSE = sqrt(stimHitRate * (1 - stimHitRate) / (numStimHits + numStimMisses));
-  stimFARate = sum(U.earlies) / numStim;
-  stimFARateSE = sqrt(stimFARate * (1 - stimFARate) / numStim);
+%   numStim = sum(U.numStim);
+%   numStimHits = sum(U.stimCorrects);
+%   numStimMisses = sum(U.stimFails);
+%   stimHitRate = numStimHits / (numStimHits + numStimMisses);
+%   stimHitRateSE = sqrt(stimHitRate * (1 - stimHitRate) / (numStimHits + numStimMisses));
+%   stimFARate = sum(U.stimEarlies) / numStim;
+%   stimFARateSE = sqrt(stimFARate * (1 - stimFARate) / numStim);
 
-  numNoStim = sum(U.numNoStim);
-  numNoStimHits = sum(U.noStimCorrects);
-  numNoStimMisses = sum(U.noStimMisses);
-  noStimHitRate = numNoStimHits / (numNoStimHits + numNoStimMisses);
-  noStimHitRateSE = sqrt(noStimHitRate * (1 - noStimHitRate) / (numNoStimHits + numNoStimMisses));
-  noStimFARate = sum(U.noStimEarlies) / numNoStim;
-  noStimFARateSE = sqrt(noStimFARate * (1 - noStimFARate) / numNoStim);
+%   numNoStim = sum(U.numNoStim);
+%   numNoStimHits = sum(U.noStimCorrects);
+%   numNoStimFails = sum(U.noStimFails);
+%   noStimHitRate = numNoStimHits / (numNoStimHits + numNoStimFails);
+%   noStimHitRateSE = sqrt(noStimHitRate * (1 - noStimHitRate) / (numNoStimHits + numNoStimFails));
+%   noStimFARate = sum(U.noStimEarlies) / numNoStim;
+%   noStimFARateSE = sqrt(noStimFARate * (1 - noStimFARate) / numNoStim);
   
   % display header text
   doHeader(U, limits);

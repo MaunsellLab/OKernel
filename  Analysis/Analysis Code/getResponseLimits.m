@@ -40,34 +40,7 @@ function [respLimitsMS, newIndices, fitCum, endCumTimeMS, fitStats, respLimitCIM
   end
   
   [respLimitsMS, fitStats, fitCum] = respLimits(RTs, file, numEarly, numTotal, startTime, endTime);
-  
-%   RTDist = zeros(1, endTime - startTime);
-%   for i = 1:length(RTs)
-%     bin = RTs(i) - startTime + 1;
-%     RTDist(bin) = RTDist(bin) + 1;
-%   end
-% 	numEarly = sum(earlyRTs);
-%   cumDist = (cumsum(RTDist) + numEarly) / numTotal;
-%   
-%   % Fit a line to the early part of the cumulative RT distribution, then deslope the distribution
-%   b = polyfit(1:file.preStimMinMS, cumDist(1:file.preStimMinMS), 1);
-%   xData = 1:length(cumDist);
-%   deSloped = cumDist - xData * b(1) - b(2);
-%   
-%   % Fit function: a: logistic infliction point, b: logistic minimum amplitude, logistic maximum amplitude
-%   % d: logistic Hill's slope. The Hill's slope refers to the steepness (positive or negative) of the curve. 
-%   opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
-%   ft =  fittype('c + (b - c)/(1 + (x/a)^d)'); 
-%   maxY = max(deSloped);
-%   minY = min(deSloped);
-%   opts.StartPoint = [(minY + maxY) / 2.0, minY, maxY, 3];
-%   opts.Lower = [0, -abs((minY + maxY) / 2.0), maxY / 2.0, 0];
-%   opts.Upper = [length(deSloped), maxY, 2 * maxY, 1000];
-%   [fitResult, fitStats] = fit(xData', deSloped', ft, opts); 
-%   fitCum = (fitResult.c + (fitResult.b - fitResult.c) ./ (1 + (xData ./ fitResult.a).^fitResult.d)) + ...
-%       xData * b(1) + b(2);
-%   respLimitsMS = fitResult.a .* exp(log(1 ./ [upperLimit, lowerLimit] - 1) ./ fitResult.d) + startTime;
-  
+    
   trialEnds = [trials(:).trialEnd];
   RTs = [trials(:).reactTimeMS];
   if length(RTs) > length(trialEnds) 

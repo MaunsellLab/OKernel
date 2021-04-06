@@ -127,8 +127,8 @@ function peaksVDPrime(plotIndex, animals, U, theTitle)
   for a = 1:length(animals)
     thisAnimal = (U.animal == animals{a});
     indices = thisAnimal & U.kernelPeak ~= 0;
-    stimHitRate = double(U.corrects(indices)) ./ double(U.corrects(indices) + U.fails(indices));
-    noStimHitRate = double(U.noStimCorrects(indices)) ./ double(U.noStimCorrects(indices) + U.noStimMisses(indices));
+    stimHitRate = double(U.stimCorrects(indices)) ./ double(U.stimCorrects(indices) + U.stimFails(indices));
+    noStimHitRate = double(U.noStimCorrects(indices)) ./ double(U.noStimCorrects(indices) + U.noStimFails(indices));
     deltaDPrime = U.noStimDPrime(indices) - U.stimDPrime(indices);
     scatter(deltaDPrime, noStimHitRate - stimHitRate, 'filled');
     hold on;

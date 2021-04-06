@@ -25,7 +25,7 @@ function kernelPlots
   limits.oneDay = [];
   switch mode
     case {'normal'}
-      rampLimits = [500];
+      rampLimits = [0];
       limits.minSessions = 0;
     otherwise
       rampLimits = 0;

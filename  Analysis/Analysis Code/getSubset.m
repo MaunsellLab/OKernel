@@ -193,39 +193,42 @@ function row = getKernels(file, trials, row)
       if ~isfield(trials(t), 'trialEnd') || isempty(trials(t).trialEnd)
           trials(t).trialEnd = -1;
       end
+      if length(trials(t).trialEnd) > 1
+          trials(t).trialEnd = trials(t).trialEnd(1);   
+      end
       eotCodes(t) = trials(t).trialEnd;
   end
   RTs = [trials(:).reactTimeMS];                              % get all trial RTs  
 	preStimMS = [trialStructs(:).preStimMS];                  	% get preStim times for each trial  
 
   % calculate the overall d'
-  allIndices = allIndices(trials, eotCodes, stimIndices);
-  if sum(allIndices.correct | allIndices.fail | allIndices.early) < 10
+  theIndices = allIndices(trials, eotCodes, stimIndices);
+  if sum(theIndices.correct | theIndices.fail | theIndices.early) < 10
     return;
   end
   % find the response interval and get a modified set of indices that limits hits to only that interval
-	[respLimitsMS, allIndices, ~, ~] = getResponseLimits(file, trials, allIndices);
+	[respLimitsMS, theIndices, ~, ~] = getResponseLimits(file, trials, theIndices);
   row.RTWindowMS = diff(respLimitsMS);
-  row.noStimCorrects = sum(allIndices.correct & ~stimIndices);
-  row.noStimFails = sum(allIndices.fail & ~stimIndices);
-  row.noStimEarlies = sum(allIndices.early & ~stimIndices); 
+  row.noStimCorrects = sum(theIndices.correct & ~stimIndices);
+  row.noStimFails = sum(theIndices.fail & ~stimIndices);
+  row.noStimEarlies = sum(theIndices.early & ~stimIndices); 
   row.numNoStim = row.noStimCorrects + row.noStimFails + row.noStimEarlies;  % don't count kEOTIgnored
-  row.stimCorrects = sum(allIndices.correct & stimIndices);
-  row.stimFails = sum(allIndices.fail & stimIndices);
-  row.stimEarlies = sum(allIndices.early & stimIndices);
+  row.stimCorrects = sum(theIndices.correct & stimIndices);
+  row.stimFails = sum(theIndices.fail & stimIndices);
+  row.stimEarlies = sum(theIndices.early & stimIndices);
   row.numStim = row.stimCorrects + row.stimFails + row.stimEarlies;                  % don't count kEOTIgnored
 
   % find the performance across stim and nostim trials combined
-  hitRate = sum(allIndices.correct) / (sum(allIndices.correct) + sum(allIndices.fail));
-  rateEarly = earlyRate(file, trials, allIndices.correct, allIndices.fail, allIndices.early);
+  hitRate = sum(theIndices.correct) / (sum(theIndices.correct) + sum(theIndices.fail));
+  rateEarly = earlyRate(file, trials, theIndices.correct, theIndices.fail, theIndices.early);
   row.pFA = 1.0 - exp(-rateEarly * row.RTWindowMS / 1000.0);
   row.pHit = (hitRate - row.pFA) / (1.0 - row.pFA);
   [row.dPrime, row.c] = dprime(row.pHit, row.pFA);
   
   % calculate the nostim trial d' using the all-trial pFA and the all-trial response window
-  indices.correct = allIndices.correct & ~stimIndices;
-  indices.fail = allIndices.fail & ~stimIndices;
-  indices.early = allIndices.early & ~stimIndices;
+  indices.correct = theIndices.correct & ~stimIndices;
+  indices.fail = theIndices.fail & ~stimIndices;
+  indices.early = theIndices.early & ~stimIndices;
   if sum(indices.correct | indices.fail | indices.early) > 0
     hitRate = sum(indices.correct) / (sum(indices.correct) + sum(indices.fail));
     rateEarly = earlyRate(file, trials, indices.correct, indices.fail, indices.early);
@@ -237,9 +240,9 @@ function row = getKernels(file, trials, row)
   end
     
   % calculate the stim trial d' using the all-trial pFA and the all-trial response window
-  indices.correct = allIndices.correct & stimIndices;
-  indices.fail = allIndices.fail & stimIndices;
-  indices.early = allIndices.early & stimIndices;
+  indices.correct = theIndices.correct & stimIndices;
+  indices.fail = theIndices.fail & stimIndices;
+  indices.early = theIndices.early & stimIndices;
   if sum(indices.correct | indices.fail | indices.early) > 0
     hitRate = sum(indices.correct) / (sum(indices.correct) + sum(indices.fail));
     rateEarly = earlyRate(file, trials, indices.correct, indices.fail, indices.early);
@@ -301,9 +304,9 @@ function row = getKernels(file, trials, row)
   end
 
   % add to the RT distributions
-  row.correctRTs = {[trials(allIndices.correct).reactTimeMS]};
-  row.earlyRTs = {[trials(allIndices.early).reactTimeMS]};
-  failRTs = [trials(allIndices.fail).reactTimeMS];
+  row.correctRTs = {[trials(theIndices.correct).reactTimeMS]};
+  row.earlyRTs = {[trials(theIndices.early).reactTimeMS]};
+  failRTs = [trials(theIndices.fail).reactTimeMS];
   failRTs(failRTs < 0 | failRTs > 100000) = 100000;     % include fails in count, but don't let them display on plot
   row.failRTs = {failRTs};
 end

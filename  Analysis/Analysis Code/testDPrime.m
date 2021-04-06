@@ -247,7 +247,7 @@ function RTHistogram(plotIndex, file, trials, indices, endCumTimeMS)
  end
  timeLimit = min(file.responseLimitMS, endCumTimeMS);
  edges = linspace(-1000, timeLimit, 25);
- nCorrect = histc(correctRTs, edges);
+ nCorrect = histc(correctRTs, edges); %#ok<*HISTC>
  nWrong = histc(wrongRTs, edges);
  nMiss = histc(missRTs, edges);
  if sum(nCorrect) + sum(nWrong) + sum(nMiss) > 0

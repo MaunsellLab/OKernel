@@ -36,7 +36,9 @@ preStim bins.
   limits.minDec = -1;
   limits.oneDay = [];
   limits.minSessions = 0;
-	[U, ~] = getSubset('normal', dataDirName, tableDataName, limits);
+% 	[U, ~] = getSubset('normal', dataDirName, tableDataName, limits);
+	[U, dataDirName] = getSessionTable('example');
+
   for i = 1:height(U)
     matFileName = dataDirName + U.animal(i) + '/MatFiles/' + U.date(i) + '.mat';
     processFile(i, U, matFileName);
@@ -246,7 +248,7 @@ function RTHistogram(plotIndex, file, trials, indices, endCumTimeMS)
     missRTs = allMissRTs(allMissRTs > 0);
  end
  timeLimit = min(file.responseLimitMS, endCumTimeMS);
- edges = linspace(-1000, timeLimit, 25);
+ edges = linspace(-1000, timeLimit, 75);
  nCorrect = histc(correctRTs, edges); %#ok<*HISTC>
  nWrong = histc(wrongRTs, edges);
  nMiss = histc(missRTs, edges);

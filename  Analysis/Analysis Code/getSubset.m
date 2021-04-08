@@ -26,7 +26,10 @@ function [U, maxDate] = getSubset(mode, dataDirName, tableDataName, limits)
   valid = valid & T.stimFails > limits.minTrials;                    	% enough fail trials
   valid = valid & T.kernelPeak > limits.criterion;
   
-  % d' decrement limits
+  % d' no stim and decrement limits
+  if limits.minDPrime ~= -1
+    valid = valid & double(T.noStimDPrime) >= limits.minDPrime;
+  end
   if limits.minDec ~= -1
     valid = valid & double(T.noStimDPrime) - double(T.stimDPrime) >= limits.minDec;     % min behavioral decrement in hit rate
   end

@@ -16,7 +16,8 @@ function result = bfd(yData, pulseWidth)
     function result = myFun(x, ~)
       f1 = zeros(1, numSamples);
       f1((1:pulseWidth) + numSamples / 2) = 1.0;
-      result = conv(x, f1, 'same') + 100 * x;
+      result = conv(x, f1, 'same');
+%       result = conv(x, f1, 'same') + 100 * x;
     end
 end
 
@@ -28,7 +29,7 @@ function testBFD
   pulseWidth = 25;
 %   peakInc = peak / peakWidth;
 %   noise = 0.1;
-  numCols = 3;
+  numCols = 2;
   numRows = 2;
   
   figure(1);
@@ -47,26 +48,28 @@ function testBFD
   f([1:pulseWidth] + numSamples / 2) = 1.0;
   subplot(numCols, numRows, 2);
   plot(f);
-  title('Convolution Pulse');
+  title('Pulse to Deconvolve');
   
 %   c = conv(x, f, 'same');
   load('/Users/maunsell/Desktop/Step Kernel.mat', 'CIs'); 
   c = CIs(2, :);
   meanC = mean(c);
   c = c - meanC;
-  subplot(numCols, numRows, 3);
+  subplot(numCols, numRows, 1);
   plot(c);
-  title('Convolved Signal');
+  title('Neuronal-Behavior Kernel');
   
   result = bfd(c, pulseWidth);
-  subplot(numCols, numRows, 4);
+  subplot(numCols, numRows, 3);
   plot(result);
-  title('Extracted Signal');
+  title('Deconvolved Kernel');
   
   convResult = conv(result, f, 'same');
-  subplot(numCols, numRows, 5);
+  subplot(numCols, numRows, 4);
   plot(convResult);
+	title('Deconvolved Kernel Convolved with Pulse');
+
   
-  sameAxisScaling('x', numCols, numRows, [1:2, 4]);
+  sameAxisScaling('x', numCols, numRows, [1, 2, 4]);
 
 end

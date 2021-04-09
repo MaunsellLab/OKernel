@@ -54,5 +54,5 @@ function showStats(subset, limitsR2, limitsMS)
   fprintf('Response Window Statistics (%s) (n = %d)\n', subset, length(limitsR2));
   fprintf('  Average r^2 of logistic fit %.2f\n', mean(limitsR2));
 %   fprintf('  Mean response window %.0f ms (SD %.0f ms)\n', mean(diff(limitsMS')), std(diff(limitsMS')));
-  fprintf('  Median response window %.0f ms (IQR %.0f - %.0f ms)\n', prctile(diff(limitsMS'), [25, 50, 75]));
+  fprintf('  Median response window %.0f ms (IQR %.0f - %.0f ms)\n', prctile(diff(limitsMS'), [50, 25, 75]));
 end

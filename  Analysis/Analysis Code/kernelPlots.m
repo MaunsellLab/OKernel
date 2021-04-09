@@ -54,6 +54,7 @@ function kernelPlots
       modeStr = '';
       limits.minSessions = 10;                    % require at least 8 sessions for each animal
       limits.minDec = 0.10;                       % stim trials can't have better performance
+      limits.minDPrime = 0.5;                     % minimum d' in the no stim condition
     case 'control'
       modeStr = ' Control';
       limits.minSessions = 0;                    	% no minimum for control sessions

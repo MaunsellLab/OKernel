@@ -17,11 +17,21 @@ function [U, dataDirName] = getSessionTable(theTable)
           limits.rampMS = 500;
       end
       limits.animal = {'All'};
+      limits.oneDay = [];
       limits.minSessions = 10;                	% require at least n sessions for each animal
       limits.minTrials = 0;
       limits.criterion = 0;
-      limits.oneDay = [];
       limits.minDec = 0.1;
+      limits.minDPrime = 0.5;
+    case {'Example', 'example'}
+      limits.rampMS = 0;
+      limits.animal = {'902'};
+      limits.oneDay = '2019-10-10';
+      limits.minSessions = 10;                	% require at least n sessions for each animal
+      limits.minTrials = 0;
+      limits.criterion = 0;
+      limits.minDec = 0.1;
+      limits.minDPrime = 0.5;
     otherwise
       fprintf('getSessionTable: unrecognized table type');
       U = [];

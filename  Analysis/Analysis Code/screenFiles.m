@@ -48,6 +48,7 @@ function screenFiles
 
 % Set up to plot the selected sessions
   limits.minSessions = 10;                         % require at least n sessions for each animal
+  limits.minDPrime = 0.5;
   for r = rampLimits
     limits.rampMS = r;
     for c = 0.0
@@ -182,25 +183,7 @@ function doFigure(U, dataDirName, limits)
   % Coordinate the scaling across plots
   sameYAxisScaling(4, 3, [4, 5, 7, 8, 10]);
   sameYAxisScaling(4, 3, [6, 9]);
-  
-  % compute overall hit and FA rates
-  
-%   numStim = sum(U.numStim);
-%   numStimHits = sum(U.stimCorrects);
-%   numStimMisses = sum(U.stimFails);
-%   stimHitRate = numStimHits / (numStimHits + numStimMisses);
-%   stimHitRateSE = sqrt(stimHitRate * (1 - stimHitRate) / (numStimHits + numStimMisses));
-%   stimFARate = sum(U.stimEarlies) / numStim;
-%   stimFARateSE = sqrt(stimFARate * (1 - stimFARate) / numStim);
-
-%   numNoStim = sum(U.numNoStim);
-%   numNoStimHits = sum(U.noStimCorrects);
-%   numNoStimFails = sum(U.noStimFails);
-%   noStimHitRate = numNoStimHits / (numNoStimHits + numNoStimFails);
-%   noStimHitRateSE = sqrt(noStimHitRate * (1 - noStimHitRate) / (numNoStimHits + numNoStimFails));
-%   noStimFARate = sum(U.noStimEarlies) / numNoStim;
-%   noStimFARateSE = sqrt(noStimFARate * (1 - noStimFARate) / numNoStim);
-  
+   
   % display header text
   doHeader(U, limits);
 end

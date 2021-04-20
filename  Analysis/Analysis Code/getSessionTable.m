@@ -1,4 +1,4 @@
-function [U, dataDirName] = getSessionTable(theTable)
+function [U, dataDirName, limits] = getSessionTable(theTable)
 %
 % Return a subset of the complete session table.  This function serves as an authoritative selector for the subset
 % of ssessions used for the various analyses.  
@@ -6,6 +6,12 @@ function [U, dataDirName] = getSessionTable(theTable)
 
   dataDirName = '/Users/Shared/Data/OKernel/';
 	tableDataName = [dataDirName ' Analysis/Processed Files.mat'];
+  % Set up the default selection criteria
+  limits.minSessions = 10;                	% require at least n sessions for each animal
+  limits.minTrials = 0;
+  limits.criterion = 0;
+  limits.minDec = 0.1;
+  limits.minDPrime = 0.5;
   switch theTable
     case {'All', 'all', 'all steps', 'All Steps', 'All steps', 'all ramps', 'All ramps', 'All Ramps'}
       switch theTable
@@ -18,22 +24,12 @@ function [U, dataDirName] = getSessionTable(theTable)
       end
       limits.animal = {'All'};
       limits.oneDay = [];
-      limits.minSessions = 10;                	% require at least n sessions for each animal
-      limits.minTrials = 0;
-      limits.criterion = 0;
-      limits.minDec = 0.1;
-      limits.minDPrime = 0.5;
     case {'Example', 'example'}
       limits.rampMS = 0;
       limits.animal = {'902'};
       limits.oneDay = '2019-10-10';
-      limits.minSessions = 10;                	% require at least n sessions for each animal
-      limits.minTrials = 0;
-      limits.criterion = 0;
-      limits.minDec = 0.1;
-      limits.minDPrime = 0.5;
     otherwise
-      fprintf('getSessionTable: unrecognized table type');
+      fprintf('getSessionTable: unrecognized table type ''%s''\n', theTable);
       U = [];
       return;
   end

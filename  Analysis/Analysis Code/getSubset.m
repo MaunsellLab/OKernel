@@ -357,7 +357,7 @@ function [T, maxDate] = getTable(dataDirName, tableDataName)
       numFiles = length(fileNames);
       for f = 1:numFiles                                  	% for each file
           [~, fileName, ~] = fileparts(fileNames{f});      	% get file name
-          if length(fileName) > 10                        	% other sorts of data in folder
+          if length(fileName) > 10 || str2double(fileName(1:4)) > 2020	% other sorts of data in folder
              continue; 
           end
           maxDate = max(maxDate, str2double(strrep(fileName(3:end), '-', '')));

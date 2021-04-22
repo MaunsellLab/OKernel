@@ -26,16 +26,15 @@ function doHeader(U, limits)
     headerText{end + 1} = sprintf('%d sessions from Animal %s', size(U, 1), limits.animal);
   end
   headerText{end + 1} = sprintf('%d trial minimum for hits/misses', limits.minTrials);
-  if limits.minDec == -1
+  if limits.minDeltaDPrime == -1
     headerText{end + 1} = 'No required delta-d'' with opto';
   else
-    headerText{end + 1} = sprintf('Delta d'' >=%.2f', limits.minDec);
+    headerText{end + 1} = sprintf('Delta d'' >=%.2f', limits.minDeltaDPrime);
   end
-  headerText{end + 1} = sprintf('Avg(SD) d'' noStim: %.2f (%.2f)', mean(U.noStimDPrime), std(U.noStimDPrime));
-  headerText{end + 1} = sprintf('Avg(SD) d''   stim: %.2f (%.2f)', mean(U.stimDPrime), std(U.stimDPrime));
-  headerText{end + 1} = sprintf('Avg(SD) delta d'': %.2f (%.2f)', mean(U.noStimDPrime - U.stimDPrime), ...
-    std(U.noStimDPrime - U.stimDPrime));
-  
+  headerText{end + 1} = sprintf('Avg(SD) d'' noStim: %.2f (%.2f)', nanmean(U.noStimDPrime), nanstd(U.noStimDPrime));
+  headerText{end + 1} = sprintf('Avg(SD) d''   stim: %.2f (%.2f)', nanmean(U.stimDPrime), nanstd(U.stimDPrime));
+  headerText{end + 1} = sprintf('Avg(SD) delta d'': %.2f (%.2f)', nanmean(U.noStimDPrime - U.stimDPrime), ...
+    nanstd(U.noStimDPrime - U.stimDPrime));
   axisHandle = subplot(4, 3, 1);						% default axes are 0 to 1
   set(axisHandle, 'visible', 'off');
   set(axisHandle, 'outerPosition', [0.02 0.75, 0.25, 0.2]);

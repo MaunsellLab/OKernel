@@ -2,9 +2,9 @@ function bootstraps = getCaseBootstraps(U, dataDirName, dataName, limits)
   % Return an array containing the optogentic stimuli from the sessions in a table
   
   if isempty(limits.oneDay)
-    bootFileName = strcat(dataDirName, ' Analysis/Mat Files/', dataName, ' ', limits.animal{1}, ' Profiles.mat');
+    bootFileName = strcat(dataDirName, ' Analysis/Mat Files/', dataName, ' ', limits.animal, ' Profiles.mat');
   else
-    bootFileName = strcat(dataDirName, ' Analysis/Mat Files/', dataName, ' ', limits.animal{1}, ' ', limits.oneDay, ...
+    bootFileName = strcat(dataDirName, ' Analysis/Mat Files/', dataName, ' ', limits.animal, ' ', limits.oneDay, ...
       ' Profiles.mat');
   end
   if isfile(bootFileName) 

@@ -9,6 +9,8 @@ function displayDPrime
   limits.minDec = -1;
   limits.oneDay = [];
   limits.minSessions = 0;
+  limits.minDPrime = -1;
+  limits.minDeltaDPrime = 0.20;
 	[U, ~] = getSubset('normal', dataDirName, tableDataName, limits);
   U.Properties.VariableNames
 
@@ -42,12 +44,9 @@ function displayDPrime
   hold on;
   
   subplot(3, 2, 4);
-%   U.pHit(find(U.pHit < 0)) = 0.5;
-%   U.pFA(find(U.pFA > 0.9)) = 0.0;
   semilogy(U.dPrime, U.RTWindowMS, 'o');
   xlabel('d-prime');
   ylabel('Fit Response Window (ms)');
-%   ylim([0, 0.5]);
   
   subplot(3, 2, 5);
   U.pHit(find(U.pHit < 0)) = 0.5;
@@ -63,7 +62,6 @@ function displayDPrime
   plot(U.noStimDPrime - U.stimDPrime, U.kernelPeak, 'o');
   xlabel('opto change in d-prime');
   ylabel('kernel peak');
-%   ylim([0, 0.5]);
   
   animals = unique(U.animal);
   figure(4);
@@ -77,9 +75,9 @@ function displayDPrime
     end
     subplot(4, 4, pIndex);
     histogram(U.noStimDPrime(U.animal == animals{a}) - U.stimDPrime(U.animal == animals{a}), 8);
-    text(0.05, 0.95, {sprintf('d'' mean %.2f', ...
+    text(0.05, 0.95, {sprintf('del-d'' mean %.2f', ...
       nanmean(U.noStimDPrime(U.animal == animals{a}) - U.stimDPrime(U.animal == animals{a}))), ...
-      sprintf('SD %.2f', std(U.dPrime(thisAnimal))), sprintf('n = %d', sum(thisAnimal))}, ...
+      sprintf('SD %.2f', nanstd(U.dPrime(thisAnimal))), sprintf('n = %d', sum(thisAnimal))}, ...
       'units', 'normalized', 'horizontalAlignment', 'left', 'verticalAlignment', 'top');
     xlabel('delta d-prime');
     title(animals{a});
@@ -87,6 +85,28 @@ function displayDPrime
   end
   sameXAxisScaling(4, 4, 1:pIndex - 1)
   
+  figure(8);
+	set(gcf, 'units', 'inches', 'position', [27, 10.0, 7.5, 10]);    
+  clf;
+  pIndex = 1;
+  for a = 1:length(animals)
+    thisAnimal = (U.animal == animals{a});
+    if sum(thisAnimal) < 8
+      continue;
+    end
+    U.noStimDPrime(thisAnimal & U.noStimDPrime == Inf) = NaN; 
+    subplot(4, 4, pIndex);
+    histogram(U.noStimDPrime(U.animal == animals{a}), 8);
+    text(0.05, 0.95, {sprintf('no stim d'' mean %.2f', ...
+      nanmean(U.noStimDPrime(U.animal == animals{a}))), ...
+      sprintf('SD %.2f', nanstd(U.noStimDPrime(thisAnimal))), sprintf('n = %d', sum(thisAnimal))}, ...
+      'units', 'normalized', 'horizontalAlignment', 'left', 'verticalAlignment', 'top');
+    xlabel('d-prime');
+    title(animals{a});
+    pIndex = pIndex + 1;
+  end
+  sameXAxisScaling(4, 4, 1:pIndex - 1)
+
   goodAnimals = {'1223', '902', '905', '1112', '1145'};
   badAnimals = {'1218', '1220', '866', '1257', '1150', '1003', '1221', '844', '903'};
 

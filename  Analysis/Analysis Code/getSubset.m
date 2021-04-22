@@ -22,6 +22,7 @@ function [U, maxDate] = getSubset(mode, dataDirName, tableDataName, limits)
   if ~isempty(limits.oneDay)
     valid = valid & T.date == limits.oneDay;
   end
+  valid = valid & (T.numStim > 0);                                    % only looking at sessions with stimulation
   valid = valid & (T.stimCorrects > limits.minTrials);                % enough correct trials
   valid = valid & T.stimFails > limits.minTrials;                    	% enough fail trials
   valid = valid & T.kernelPeak > limits.criterion;
@@ -33,30 +34,45 @@ function [U, maxDate] = getSubset(mode, dataDirName, tableDataName, limits)
   if limits.minDec ~= -1
     valid = valid & double(T.noStimDPrime) - double(T.stimDPrime) >= limits.minDec;     % min behavioral decrement in hit rate
   end
+  if limits.maxMeanPowerMW ~= -1
+    valid = valid & T.meanPowerMW <= limits.maxMeanPowerMW;
+  end
   U = T(valid, :);
   U = withoutTrainingDays(U);                                         % remove sessions from training periods
-  
-  % remove any animals with too few sessions for any ramp duration
-  if isempty(limits.oneDay) && limits.minSessions > 0
+ 	U.dPrime(U.dPrime == Inf) = NaN; 
+	U.noStimDPrime(U.noStimDPrime == Inf) = NaN; 
+	U.stimDPrime(U.stimDPrime == Inf) = NaN; 
+ 
+  % Some limits related to over-session performance.  We can requie a minimum number of sessions for each animal/ramp,
+  % and a minimum average delta-d'.
+  if isempty(limits.oneDay)
     animals = unique(U.animal);
     rampDurs = unique(limits.rampMS);
     for r = 1:length(rampDurs)
       for a = 1:length(animals)
         animalRows = U.animal == animals{a} & U.rampMS == rampDurs(r);
-        if sum(animalRows) < limits.minSessions
+        if limits.minSessions > 0 && sum(animalRows) < limits.minSessions
           U = U(~animalRows, :);
+          continue;
+        end
+        if limits.minDeltaDPrime >= 0 && nanmean(U.noStimDPrime(animalRows) - U.stimDPrime(animalRows)) < limits.minDeltaDPrime
+          fprintf('%s mean too low %.2f (n=%d)\n', ...
+              animals{a}, nanmean(U.noStimDPrime(animalRows) - U.stimDPrime(animalRows)), sum(animalRows));
+          U = U(~animalRows, :);
+        else
+          fprintf('%s mean is good %.2f (n=%d)\n', ...
+              animals{a}, nanmean(U.noStimDPrime(animalRows) - U.stimDPrime(animalRows)), sum(animalRows));
         end
       end
     end
   end
-  
   if size(U, 1) == 0
     if length(limits.rampMS) == 1
       fprintf('getSubset: No valid sessions found for ''%s'' for animal ''%s'' on %d ms ramps, minTrials %d and decrement %.2f\n', ...
-        mode, limits.animal{1}, limits.rampMS, limits.minTrials, limits.minDec);
+        mode, limits.animal, limits.rampMS, limits.minTrials, limits.minDec);
     else
       fprintf('getSubset: No valid sessions found for ''%s'' for animal ''%s'' on multiple ramps, minTrials %d and decrement %.2f\n', ...
-        mode, limits.animal{1}, limits.minTrials, limits.minDec);
+        mode, limits.animal, limits.minTrials, limits.minDec);
     end
   end
 end
@@ -171,7 +187,9 @@ function row = getKernels(file, trials, row)
 % Compute kernels for one session
 %
   trialStructs = [trials(:).trial];
-  meanPower = [trials(:).meanPowerMW];                        % get power applied for each trial                        
+  meanPower = [trials(:).meanPowerMW];                        % get power applied for each trial 
+  row.meanPowerMW = mean(meanPower);
+  row.maxPowerMW = max(meanPower);
   if isfield(trialStructs, 'pulseContrast')                   % get rid of any trials with reduced opto power
       stimIndices = meanPower > 0 & [trialStructs.pulseContrast] == 1;	% only trials with contrast == 1
   else
@@ -226,7 +244,7 @@ function row = getKernels(file, trials, row)
   rateEarly = earlyRate(file, trials, theIndices.correct, theIndices.fail, theIndices.early);
   row.pFA = 1.0 - exp(-rateEarly * row.RTWindowMS / 1000.0);
   row.pHit = (hitRate - row.pFA) / (1.0 - row.pFA);
-  [row.dPrime, row.c] = dprime(row.pHit, row.pFA);
+  [row.dPrime, row.c] = dprime(row.pHit, row.pFA, true);
   
   % calculate the nostim trial d' using the all-trial pFA and the all-trial response window
   indices.correct = theIndices.correct & ~stimIndices;
@@ -237,7 +255,7 @@ function row = getKernels(file, trials, row)
     rateEarly = earlyRate(file, trials, indices.correct, indices.fail, indices.early);
     row.noStimPFA = 1.0 - exp(-rateEarly * row.RTWindowMS / 1000.0);
     row.noStimPHit = (hitRate - row.pFA) / (1.0 - row.pFA);         % using overall pFA
-    [row.noStimDPrime, row.noStimC] = dprime(row.noStimPHit, row.pFA);
+    [row.noStimDPrime, row.noStimC] = dprime(row.noStimPHit, row.pFA, true);
 %     fprintf('  No Stim: pFA = %.2f, pHit = %.2f d-prime = %.1f, c = %.1f\n', ...
 %               row.noStimPFA, row.noStimPHit, row.noStimDPrime, row.noStimC);
   end
@@ -251,7 +269,7 @@ function row = getKernels(file, trials, row)
     rateEarly = earlyRate(file, trials, indices.correct, indices.fail, indices.early);
     row.stimPFA = 1.0 - exp(-rateEarly * row.RTWindowMS / 1000.0);
     row.stimPHit = (hitRate - row.pFA) / (1.0 - row.pFA);   % using overall pFA
-    [row.stimDPrime, row.stimC] = dprime(row.stimPHit, row.pFA);
+    [row.stimDPrime, row.stimC] = dprime(row.stimPHit, row.pFA, true);
 %     fprintf('  Stim:    pFA = %.2f, pHit = %.2f d-prime = %.1f, c = %.1f  delta: %.5f\n', ...
 %               row.stimPFA, row.stimPHit, row.stimDPrime, row.stimC, row.noStimDPrime - row.stimDPrime);
   end
@@ -320,7 +338,9 @@ end
 function [T, maxDate] = getTable(dataDirName, tableDataName)
 
   if ~isfile(tableDataName)
-      varNames = {'animal', 'date', 'numStim', 'stimCorrects', 'stimFails', 'stimEarlies', ...
+      varNames = {'animal', 'date', 'numStim', ...
+          'meanPowerMW', 'maxPowerMW', ...
+          'stimCorrects', 'stimFails', 'stimEarlies', ...
           'numNoStim', 'noStimCorrects', 'noStimFails', 'noStimEarlies', ...
           'RTWindowMS', 'pHit', 'pFA', 'dPrime', 'c', ...
           'stimPHit', 'stimPFA', 'stimDPrime', 'stimC', ...
@@ -328,7 +348,9 @@ function [T, maxDate] = getTable(dataDirName, tableDataName)
           'peakMinMS', 'peakMaxMS', 'rampMS', 'kernelCI', 'kernelPeak', ...
           'hitKernel', 'failKernel', 'earlyKernel', 'RTKernel', 'SRTKernel', 'randomKernel', ...
           'correctRTs', 'failRTs', 'earlyRTs'};
-      varTypes = {'string', 'string', 'uint32', 'uint32', 'uint32', 'uint32', ...
+      varTypes = {'string', 'string', 'uint32', ...
+          'double', 'double', ...
+          'uint32', 'uint32', 'uint32', ...
           'uint32', 'uint32', 'uint32', 'uint32', ...
           'double', 'double', 'double',  'double', 'double', ...
           'double', 'double', 'double',  'double', ...
@@ -385,6 +407,8 @@ function row = getRowEntry(dataDirName, row)
 
     % initialize to an empty row
     row.numStim = 0;
+    row.meanPowerMW = 0.0;
+    row.maxPowerMW = 0.0;
     row.stimCorrects = 0;
     row.stimFails = 0;
     row.stimEarlies = 0;
@@ -422,7 +446,7 @@ function row = getRowEntry(dataDirName, row)
     load([dataDirName row.animal '/MatFiles/' row.date]);     %#ok<LOAD>
     if exist('trials', 'var') && isfield(trials, 'trial')     %#ok<NODEF>
         row.rampMS = trials(1).trial.visualRampDurMS;
-        trials = validateTrials(row, trials);
+        trials = validateTrials(trials);
         row = getKernels(file, trials, row);    
     end
 end

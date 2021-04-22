@@ -1,5 +1,11 @@
 %{
 
+00 preProcessAll() 
+
+Should be run to set up the data for analysis.  This should be run whenever key analysis
+parameters have been changed. 
+
+
 Analysis code overview:
 
 statsRTFit produces statistics on the analysis of response windows.  These involve fitting a logistic function

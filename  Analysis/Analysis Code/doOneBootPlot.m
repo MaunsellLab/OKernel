@@ -39,7 +39,7 @@ function CIs = doOneBootPlot(bootstraps, limits, type, startTimeMS, endTimeMS, p
       set(gca,'XTick', [0, -plotRTStartMS, bins]);
       set(gca, 'XTickLabel', {sprintf('%d', plotRTStartMS), '0', sprintf('%d', plotRTStartMS + plotEndMS - plotStartMS)});
       xlabel('Time Relative to RT');
-    case {'fa', 'FA'}
+    case {'early', 'Early'}
       set(gca,'XTick', [0, -plotRTStartMS, bins]);
       set(gca, 'XTickLabel', {sprintf('%d', plotRTStartMS), '0', sprintf('%d', plotRTStartMS + plotEndMS - plotStartMS)});
       xlabel('Time Relative to FA');
@@ -50,7 +50,7 @@ function CIs = doOneBootPlot(bootstraps, limits, type, startTimeMS, endTimeMS, p
       set(gca, 'XTickLabel', {sprintf('%d', preStimMS), 'Stim', 'RT', sprintf('+%d', endTimeMS)});
       xlabel('Fixed Stim-RT Interval');
     otherwise
-      fprintf('doOneKernelPlot: unrecognized plot type: %s\n', type);
+      fprintf('doOneBootPlot: unrecognized plot type: %s\n', type);
   end
   ylabel(yLabel);
   title(plotTitle);

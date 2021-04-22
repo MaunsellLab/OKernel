@@ -25,22 +25,22 @@ function kernelPlots
   limits.oneDay = [];
   switch mode
     case {'normal'}
-      rampLimits = [0];
+      rampLimits = [0, 500];
       limits.minSessions = 0;
     otherwise
       rampLimits = 0;
   end
   
-% All animals, step and ramp
-	animals = {'All'};
-  
+% % All animals, step and ramp
+% 	animals = {'All'};
+%   
 % Performance of individual step animals
 %   rampLimits = 0;
-% 	animals = {'902', '905', '1150', '1145', '1112'};
+% 	animals = {'902', '905', '1112', '1145', '1223'};
 
 % Performance of individual ramp animals (not used in a figure)
-%     rampLimits = 500;
-%   	animals = {'902', '1150', '1218', '1220'};
+    rampLimits = 500;
+  	animals = {'902', '1112', '1150'};
 
 % Example session
 %   animals = {'902'};
@@ -52,9 +52,11 @@ function kernelPlots
   switch mode
     case 'normal'
       modeStr = '';
-      limits.minSessions = 10;                    % require at least 8 sessions for each animal
-      limits.minDec = 0.10;                       % stim trials can't have better performance
-      limits.minDPrime = 0.5;                     % minimum d' in the no stim condition
+      limits.minSessions = 5;                     % require at least n sessions for each animal
+      limits.minDec = -1;                         % stim trials can't have better performance
+      limits.minDPrime = -1;                      % minimum d' in the no stim condition
+      limits.minDeltaDPrime = 0.10;               % minimum effect of opto stimulation
+      limits.maxMeanPowerMW = 0.25;               % maximum average power over sesions
     case 'control'
       modeStr = ' Control';
       limits.minSessions = 0;                    	% no minimum for control sessions
@@ -117,7 +119,7 @@ function doOneFigure(U, dataDirName, dataName, limits, bootstraps)
   plotTitle = sprintf('Hit Kernel (n=%d)', numHits);
   subplot(4, 3, 4);
   CIs = doOneBootPlot(bootstraps.hitProfiles / 2 + 0.5, limits, 'stim', plotStartMS, plotEndMS, plotTitle, ylabel);
-  save([dataDirName, ' Analysis/Mat Files/', dataName, ' ', limits.animal, ' Hit Kernel'], 'CIs');
+%   save(strcat(dataDirName, ' Analysis/Mat Files/', dataName, ' ', limits.animal, ' Hit Kernel'), 'CIs');
   
   % miss kernel
   numMisses = size(bootstraps.missProfiles, 1);
@@ -193,8 +195,8 @@ function doOneFigure(U, dataDirName, dataName, limits, bootstraps)
 
   doHeader(U, limits);
   if ~isempty(limits.oneDay)
-    saveas(gcf, [dataDirName, ' Analysis/Figures/', dataName, ' ', limits.animal, ' ', limits.oneDay, '.pdf']);
+    saveas(gcf, strcat(dataDirName, ' Analysis/Figures/', dataName, ' ', limits.animal, ' ', limits.oneDay, '.pdf'));
   else
-    saveas(gcf, [dataDirName, ' Analysis/Figures/', dataName, ' ', limits.animal, '.pdf']);
+    saveas(gcf, strcat(dataDirName, ' Analysis/Figures/', dataName, ' ', limits.animal, '.pdf'));
   end
 end

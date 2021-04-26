@@ -1,19 +1,22 @@
 function displayDPrime
 % Get a list of files to examine
-  dataDirName = '/Users/Shared/Data/OKernel/';
-	tableDataName = [dataDirName ' Analysis/Processed Files.mat'];
-  limits.rampMS = 0;
-  limits.criterion = 0;
-  limits.animal = {'All'};
-  limits.minTrials = 0;
-  limits.minDec = -1;
-  limits.oneDay = [];
-  limits.minSessions = 0;
-  limits.minDPrime = -1;
-  limits.minDeltaDPrime = 0.20;
-	[U, ~] = getSubset('normal', dataDirName, tableDataName, limits);
-  U.Properties.VariableNames
 
+  rampMS = 0;
+  animals = {'902', '1112', '1145', '905', '1223'};
+
+%   rampMS = 500;
+%   animals = {'902', '1112', '1150'};
+  
+	dataDirName = '/Users/Shared/Data/OKernel/';
+  load([dataDirName ' Analysis/Mat Files/masterTable.mat'], 'T');
+  limits = setLimits('All');
+  limits.rampMS = rampMS;
+	limits.animal = animals;
+	U = selectUsingLimits(T, limits);
+  if height(U) == 0
+    return;
+  end
+  
   figure(3);
 	set(gcf, 'units', 'inches', 'position', [27, 10.0, 7.5, 10]);    
   clf;

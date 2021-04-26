@@ -25,6 +25,8 @@ function preProcessAll
       numFiles = length(fileNames);
       for f = 1:numFiles                                  	% for each file
           [~, fileName, ~] = fileparts(fileNames{f});      	% get file name
+          fprintf('Session %4d of %4d: %4s %s\n', session, numSessions, animalNames{a}, fileName);
+          session = session + 1;
           if length(fileName) > 10 || str2double(fileName(1:4)) > 2020	% skip unrelated types of file in folder
              continue; 
           end
@@ -42,8 +44,6 @@ function preProcessAll
             end
             save([dataDirName, ' Analysis/Mat Files/Stim Profiles/', animalNames{a}, '/', fileName], 'stimProfiles'); 
           end
-          fprintf('Session %4d of %4d: %4s %s\n', session, numSessions, animalNames{a}, fileName);
-          session = session + 1;
       end
   end
   save([dataDirName, tableName], 'T'); 
@@ -229,7 +229,7 @@ function [row, stimProfiles] = getKernels(file, trials, row)
       row.stimEarlies = size(profiles, 1);                  % getStimProfiles might reject some trials as too short
       row.earlyKernel = {earlySum / row.stimEarlies};
   end
-
+  
   % If we have corrects and fails, save the hit, fail, total and random kernels.
   row.kernelCI = sqrt(hitCI^2 + failCI^2);
   if ~isempty(hitKernel) && ~isempty(failKernel)
@@ -244,29 +244,26 @@ function [row, stimProfiles] = getKernels(file, trials, row)
   failRTs(failRTs < 0 | failRTs > 100000) = 100000;     % include fails in count, but don't let them display on plot
   row.failRTs = {failRTs};
   
-  % get the hit kernel
+  % get the hit profiles
   hitIndices = theIndices.correct & stimIndices;
   hitProfiles = getStimProfiles(trials(hitIndices), plotStartMS, plotEndMS, true, false);
   stimProfiles.hitProfiles = normProfiles(hitProfiles);
 
-  % get the RT aligned kernel
+  % get the RT aligned profiles
   RTProfiles = getStimProfiles(trials(hitIndices), plotRTStartMS, plotRTStartMS + plotEndMS - plotStartMS, true, true);
   stimProfiles.RTProfiles = normProfiles(RTProfiles);
 
-  % get the Stim & RT aligned hit kernel
+  % get the Stim & RT aligned hit profiles
   stimRTProfiles = getStimRTProfiles(trials(hitIndices), plotStartMS, plotEndMS);
   stimProfiles.stimRTProfiles = normProfiles(stimRTProfiles);
 
-  % get the miss kernel
+  % get the miss profiles
   missProfiles = getStimProfiles(trials(theIndices.fail & stimIndices), plotStartMS, plotEndMS, true, false);
   stimProfiles.missProfiles = normProfiles(missProfiles);
 
-  % Get the FA kernel
-%   if row.FAs > 0
-      earlyProfiles = getStimProfiles(trials(theIndices.early & stimIndices), plotRTStartMS, plotRTStartMS + plotEndMS - plotStartMS, true, true);
-      stimProfiles.earlyProfiles = normProfiles(earlyProfiles);
-%   end
-
+  % Get the early profiles
+  earlyProfiles = getStimProfiles(trials(theIndices.early & stimIndices), plotRTStartMS, plotRTStartMS + plotEndMS - plotStartMS, true, true);
+  stimProfiles.earlyProfiles = normProfiles(earlyProfiles);
 end
 
 %%

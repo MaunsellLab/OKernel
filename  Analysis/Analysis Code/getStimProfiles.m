@@ -33,12 +33,9 @@ function stimProfiles = getStimProfiles(trials, startTimeMS, endTimeMS, normaliz
   stimProfiles = zeros(numTrials, endTimeMS - startTimeMS);
   for t = 1:numTrials
     meanPower = trials(t).meanPowerMW;
-    if meanPower == 0
-        if normalize
-            meanPower = 0.5;
-        end 
-        stimProfiles(t, :) = meanPower * ones(1, endTimeMS - startTimeMS);
-        continue;
+    if meanPower == 0 && normalize
+      stimProfiles(t, :) = 0.5 * ones(1, endTimeMS - startTimeMS);
+      continue;
     end
     pulseDurMS = trials(t).trial.pulseDurMS;   
     if alignRT
@@ -67,10 +64,13 @@ function stimProfiles = getStimProfiles(trials, startTimeMS, endTimeMS, normaliz
         stimProfiles(t, :) = [prepend, stimProfile];
     end
     % We must normalize each trial individually, because the user might change the mean power
-    % during the day and move it above the anticipated max for some trials
+    % during the day and move it above the anticipated max for some trials. We divide mean power by
+    % 50 because there might be a ramp at the start of the trial and we count those as full power so the
+    % kernel doesn't get pulled to zero.
+    
     if normalize
-      stimProfiles(t, stimProfiles(t, :) < meanPower) = 0;
-      stimProfiles(t, stimProfiles(t, :) >= meanPower) = 1;
+      stimProfiles(t, stimProfiles(t, :) < meanPower / 50) = 0;
+      stimProfiles(t, stimProfiles(t, :) >= meanPower / 50) = 1;
     end
   end
 end

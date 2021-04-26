@@ -1,13 +1,15 @@
-function bootstraps = getCaseBootstraps(U, dataDirName, dataName, limits)
+function bootstraps = getCaseBootstraps(U, dataDirName, dataName, limits, mustRecreate)
   % Return an array containing the optogentic stimuli from the sessions in a table
-  
-  if isempty(limits.oneDay)
-    bootFileName = strcat(dataDirName, ' Analysis/Mat Files/', dataName, ' ', limits.animal, ' Profiles.mat');
-  else
-    bootFileName = strcat(dataDirName, ' Analysis/Mat Files/', dataName, ' ', limits.animal, ' ', limits.oneDay, ...
-      ' Profiles.mat');
+  if nargin < 5
+    mustRecreate = false;
   end
-  if isfile(bootFileName) 
+  if isempty(limits.oneDay)
+    theName = strcat(dataDirName, ' Analysis/Mat Files/', dataName, {' '}, limits.animal, ' Profiles.mat');
+  else
+    theName = strcat(dataDirName, ' Analysis/Mat Files/', dataName, {' '}, limits.animal, {' '}, limits.oneDay, ' Profiles.mat');
+  end
+  bootFileName = theName{1};
+  if isfile(bootFileName) && ~mustRecreate
     load(bootFileName, 'bootstraps');
   else
     bootstraps = struct('hitProfiles', [], 'missProfiles', [], 'RTProfiles', [], 'stimRTProfiles', [], ...

@@ -6,7 +6,6 @@ function CIs = doOneBootPlot(bootstraps, limits, type, startTimeMS, endTimeMS, p
     'DesignMethod','equiripple');
 
   bootKernel = bootstrp(limits.numBoot, @mean, bootstraps);
-%   PCs = prctile(bootKernel, [5, 50, 95]);
   PCs = prctile(bootKernel, [15.9, 50, 84.1]);              % +/- 1 SEM
   PCMeans = mean(PCs, 2);
   CIs = zeros(3, size(bootstraps, 2));

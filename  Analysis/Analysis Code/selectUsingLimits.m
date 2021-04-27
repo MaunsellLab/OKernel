@@ -9,7 +9,7 @@ function U = selectUsingLimits(T, limits)
   controls = controlSessions(T);
   valid = any(T.rampMS == limits.rampMS & T.kernelCI > 0, 2) & ~controls; % empty entries have zero for kernelCI
   if ~strcmp(limits.animal, 'All')
-    valid = valid & T.animal == limits.animal;
+    valid = valid & ismember(T.animal, limits.animal);
   end
   if ~isempty(limits.oneDay)
     valid = valid & T.date == limits.oneDay;
@@ -21,9 +21,11 @@ function U = selectUsingLimits(T, limits)
   
   % d', no stim, and decrement limits
   if limits.minDPrime ~= -1
+    valid = valid & ~isnan(T.noStimDPrime);
     valid = valid & double(T.noStimDPrime) >= limits.minDPrime;
   end
   if limits.minDec ~= -1
+    valid = valid & ~isnan(T.noStimDPrime) & ~isnan(T.stimDPrime);
     valid = valid & double(T.noStimDPrime) - double(T.stimDPrime) >= limits.minDec;     % min behavioral decrement in hit rate
   end
   if limits.maxMeanPowerMW ~= -1

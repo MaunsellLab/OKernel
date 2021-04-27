@@ -1,6 +1,6 @@
 function [plotStartMS, plotEndMS, plotRTStartMS] = plotLimits(onLine)
 
-if nargin > 0
+if nargin > 0 && onLine
   plotStartMS = -200;
   plotEndMS = 200;
   plotRTStartMS = plotStartMS - 200;

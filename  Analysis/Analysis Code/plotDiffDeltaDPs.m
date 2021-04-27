@@ -1,120 +1,219 @@
 function plotDiffDeltaDPs
+% Plot different delta-d' subsets for the data
 
-  [U, dataDirName, limits] = getSessionTable('all steps');
+%{
+Try taking each animal and splitting them into high/low delta-d' sessions (median split).
+Might also do this by trials instead, to keep things balanced on significance. 
+%}
+	dataDirName = '/Users/Shared/Data/OKernel/';
+  load([dataDirName ' Analysis/Mat Files/masterTable.mat'], 'T');
+
+  rampMS = 0;
+  animals = {'902', '1112', '1145', '905', '1223'};
+  limits = setLimits('All Steps');
+  limits.rampMS = rampMS;
+  limits.animals = animals;
+  limits.numBoot = 10;
+  T = selectUsingLimits(T, limits);
+
+% For these analyses, we need valid d' measures.
+  T = T(~isnan(T.dPrime) & ~isnan(T.stimDPrime) & ~isnan(T.noStimDPrime), :);
+
+%   rampMS = 500;
+%   animals = {'902', '1112', '1150'};
+  
+  h = figure(2);
+  set(h, 'Units', 'inches', 'Position', [25, 10, 8.5, 11]);
+  clf;  
+  plotKernelVDeltaDP(T);
+ 
   h = figure(1);
   set(h, 'Units', 'inches', 'Position', [25, 1.25, 8.5, 11]);
-  clf;
-  cutoffs = [0, 0.25, 0.44, 0.77, inf];
-  limits.numBoot = 10;
-  deltaDPrime = U.noStimDPrime - U.stimDPrime;
-  for c = 2:length(cutoffs)
-    rangeString = sprintf('Ramp 0 dDP %.2f to %.2f', cutoffs(c - 1), cutoffs(c));
-    V = U(deltaDPrime >= cutoffs(c - 1) & deltaDPrime < cutoffs(c), :);
-    if (height(V) <= 0)
-      continue;
-    end
-    bootstraps = getCaseBootstraps(V, dataDirName, rangeString, limits);
-    doOneFigure(V, dataDirName, rangeString, limits, bootstraps);
-  end
+  clf;  
+  [smallDPs, bigDPs] = splitSessions(T, animals);
+	doFigure(dataDirName, smallDPs, bigDPs, limits);
+	saveas(gcf, [dataDirName, ' Analysis/Figures/Big-Small DPs.pdf']);
 end
 
 %%
-function doOneFigure(U, dataDirName, dataName, limits, bootstraps)
+function doFigure(dataDirName, smallDPs, bigDPs, limits)
   % Compile and plot the kernels
-  display(U);
-  [plotStartMS, plotEndMS, plotRTStartMS] = plotLimits();
-  
-  h = figure(1);
-  set(h, 'Units', 'inches', 'Position', [25, 1.25, 8.5, 11]);
-  clf;
+
+ 	smallBootstraps = getCaseBootstraps(smallDPs, dataDirName, 'Small Delta d''', limits);
+	bigBootstraps = getCaseBootstraps(bigDPs, dataDirName, 'Large Delta d''', limits);
+  [plotStartMS, plotEndMS, ~] = plotLimits();
   ylabel = 'Normalized Power';
   limits.yAxis = 0.5;
   
   % hit kernel
-  numHits = size(bootstraps.hitProfiles, 1);
+  numHits = size(smallBootstraps.hitProfiles, 1);
   plotTitle = sprintf('Hit Kernel (n=%d)', numHits);
   subplot(4, 3, 4);
-  CIs = doOneBootPlot(bootstraps.hitProfiles / 2 + 0.5, limits, 'stim', plotStartMS, plotEndMS, plotTitle, ylabel);
-  save([dataDirName, ' Analysis/Mat Files/', dataName, ' ', limits.animal{1}, ' Hit Kernel'], 'CIs');
+  smallHitCIs = doOneBootPlot(smallBootstraps.hitProfiles / 2 + 0.5, limits, 'stim', plotStartMS, plotEndMS, plotTitle, ylabel);
+%   save([dataDirName, ' Analysis/Mat Files/', dataName, ' ', limits.animal{1}, ' Hit Kernel'], 'CIs');
   
   % miss kernel
-  numMisses = size(bootstraps.missProfiles, 1);
+  numMisses = size(smallBootstraps.missProfiles, 1);
   plotTitle = sprintf('Miss Kernel (n=%d)', numMisses);
   subplot(4, 3, 5);
-  doOneBootPlot(bootstraps.missProfiles / 2 + 0.5, limits, 'stim', plotStartMS, plotEndMS, plotTitle, '');
+  smallMissCIs = doOneBootPlot(smallBootstraps.missProfiles / 2 + 0.5, limits, 'stim', plotStartMS, plotEndMS, plotTitle, '');
 
-  % total kernel trials weighted across all trials. We need to multiple the weighted sum by 2 because it is effectively
-  % a mean of the hit and miss kernels, not a difference. By taking the mean, we lose the doubling that we should get
-  % from the opposing effects.  This has been validated in simulations. 
-  plotTitle = sprintf('Weight by Trial (n=%d)', numHits + numMisses);
+  % full kernel
+  plotTitle = sprintf('Full Kernel (n=%d)', numHits + numMisses);
   limits.yAxis = 0.0;
-  hitMissBoot = [bootstraps.hitProfiles; -bootstraps.missProfiles];
+  hitMissBoot = [smallBootstraps.hitProfiles; -smallBootstraps.missProfiles];
   subplot(4, 3, 6);
-  doOneBootPlot(hitMissBoot, limits, 'stim', plotStartMS, plotEndMS, plotTitle, '');
-  if ~strcmp(limits.animal, 'All')
-    figure(2);
-    h = subplot(4, 3, limits.aniNum);
-    doOneBootPlot(hitMissBoot, limits, 'stim', plotStartMS, plotEndMS, plotTitle, '');
-    h.Title.String = strrep(h.Title.String, 'Weight by Trial', ['Animal ', limits.animal]);
-    figure(1);
-  end
+  smallFullCIs = doOneBootPlot(hitMissBoot, limits, 'stim', plotStartMS, plotEndMS, plotTitle, '');
+  headerPlot(1, smallDPs, limits);
   
-  % RT aligned kernel
-  limits.yAxis = 0.5;
-  plotTitle = sprintf('RT Aligned (n=%d)', numHits);
+  % hit kernel
+  numHits = size(bigBootstraps.hitProfiles, 1);
+  plotTitle = sprintf('Hit Kernel (n=%d)', numHits);
   subplot(4, 3, 7);
-  doOneBootPlot(bootstraps.RTProfiles / 2 + 0.5, limits, 'RT', plotRTStartMS, ...
-      plotRTStartMS + plotEndMS - plotStartMS, plotTitle, ylabel);
-    
-  % Stim-RT aligned kernel
-  plotTitle = sprintf('Stim-RT Aligned (n=%d)', numHits);
-  subplot(4, 3, 10);
-  doOneBootPlot(bootstraps.stimRTProfiles / 2 + 0.5, limits, 'stimRT', plotRTStartMS, ...
-      plotRTStartMS + plotEndMS - plotStartMS, plotTitle, ylabel);
-
-  % FA kernel. There might be some sessions with no FA, so we must clear them out
-	plotTitle = sprintf('FA Aligned (n=%d)', size(bootstraps.FAProfiles, 1));
-	subplot(4, 3, 8);
-  doOneBootPlot(bootstraps.FAProfiles / 2 + 0.5, limits, 'FA', plotStartMS, plotEndMS, plotTitle, '');
-
-  % Random Kernel.  We randomly offset the hit/miss bootstraps to produce the random kernel
-  limits.yAxis = 0.0;
-  if numHits > 0 && numMisses > 0
-      arrayWidth = size(hitMissBoot, 2);
-      for b = 1:size(hitMissBoot, 1)
-        mult = randi([0 1], 1, 1) * 2 - 1;
-        hitMissBoot(b, :) = circshift(hitMissBoot(b, :), randi([1, arrayWidth], 1, 1)) * mult;
-      end
-      plotTitle = sprintf('Random Kernel (n=%d)', numHits + numMisses);
-      subplot(4, 3, 9);
-      doOneBootPlot(hitMissBoot, limits, 'stim', plotStartMS, plotEndMS, plotTitle, '');
-  end  
+  bigHitCIs = doOneBootPlot(bigBootstraps.hitProfiles / 2 + 0.5, limits, 'stim', plotStartMS, plotEndMS, plotTitle, ylabel);
+%   save([dataDirName, ' Analysis/Mat Files/', dataName, ' ', limits.animal{1}, ' Hit Kernel'], 'CIs');
   
-  %% Compile and plot the RT distributions
-  minRespTimeMS = 10000; maxRespTimeMS = 0;
-  rows = size(U, 1);
-  for r = 1:rows
-      clear file;
-      load(strcat(dataDirName, U.animal(r), '/MatFiles/', U.date(r)), 'file');
-      minRespTimeMS = min(minRespTimeMS, file.tooFastMS);         % set min/max response times
-      maxRespTimeMS = max(maxRespTimeMS, file.rewardedLimitMS);
-  end
-  correctRTs = cat(2, U.correctRTs{:});
-  earlyRTs = cat(2, U.earlyRTs{:});
-  failRTs = cat(2, U.failRTs{:});
-  doRTHistogramPlot(correctRTs, earlyRTs, failRTs, minRespTimeMS, maxRespTimeMS);
-  doRTPDFPlot(correctRTs, earlyRTs, failRTs, minRespTimeMS, maxRespTimeMS)
+  % miss kernel
+  numMisses = size(bigBootstraps.missProfiles, 1);
+  plotTitle = sprintf('Miss Kernel (n=%d)', numMisses);
+  subplot(4, 3, 8);
+  bigMissCIs = doOneBootPlot(bigBootstraps.missProfiles / 2 + 0.5, limits, 'stim', plotStartMS, plotEndMS, plotTitle, '');
+
+  % full kernel
+  plotTitle = sprintf('Full Kernel (n=%d)', numHits + numMisses);
+  limits.yAxis = 0.0;
+  hitMissBoot = [bigBootstraps.hitProfiles; -bigBootstraps.missProfiles];
+  subplot(4, 3, 9);
+  bigFullCIs = doOneBootPlot(hitMissBoot, limits, 'stim', plotStartMS, plotEndMS, plotTitle, '');
+  headerPlot(2, bigDPs, limits);
+
+  pairedBootPlots(10, smallHitCIs, bigHitCIs, limits, 'Hit Kernels', '');
+  pairedBootPlots(11, smallMissCIs, bigMissCIs, limits, 'Miss Kernels', '');
+  pairedBootPlots(12, smallFullCIs, bigFullCIs, limits, 'Full Kernels', '');
 
   % Coordinate the scaling across plots
-  sameYAxisScaling(4, 3, [4, 5, 7, 8, 10]);
-  sameYAxisScaling(4, 3, [6, 9]);
+  sameYAxisScaling(4, 3, [4, 5, 7, 8, 10, 11], [0.40, 0.60]);
+  sameYAxisScaling(4, 3, [6, 9, 12], [-0.15, 0.05]);
 
-  doHeader(U, limits);
-  text(0.00, 0.0, sprintf('delta d'' range %s', dataName), 'verticalAlignment', 'top');
+end
 
-  if ~isempty(limits.oneDay)
-    saveas(gcf, [dataDirName, ' Analysis/Figures/', dataName, ' ', limits.animal{1}, ' ', limits.oneDay, '.pdf']);
+%%
+function headerPlot(plotIndex, U, limits)
+%
+% Display the header information for an OKernel analysis page
+%
+  headerText = cell(1, 1);
+  if limits.rampMS == 0
+    headerText{1} = sprintf('Visual Contrast Step');
   else
-    saveas(gcf, [dataDirName, ' Analysis/Figures/', dataName, ' ', limits.animal{1}, '.pdf']);
+    headerText{1} = sprintf('Visual Contrast Ramp %d ms', limits.rampMS);
+  end
+  if strcmp(limits.animal, 'All')
+    headerText{end + 1} = sprintf('%d sessions from %d animals', size(U, 1), length(unique(U.animal)));
+    animalList = [];
+    animals = unique(U.animal);
+    for a = 1:length(animals)
+      animalList = strcat(animalList, sprintf('  %s (%d),', animals{a}, sum(U.animal == animals{a})));
+      if ~mod(a, 3)
+        headerText{end + 1} = animalList; %#ok<AGROW>
+        animalList = [];
+      end
+    end
+    if mod(a, 4)
+      headerText{end + 1} = animalList; 
+    end
+  else
+    headerText{end + 1} = sprintf('%d sessions from Animal %s', size(U, 1), limits.animal);
+  end
+  if limits.minDeltaDPrime == -1
+    headerText{end + 1} = 'No required delta-d'' with opto';
+  else
+    headerText{end + 1} = sprintf('Delta d'' >=%.2f', limits.minDeltaDPrime);
+  end
+  headerText{end + 1} = sprintf('Avg (SD) d'' noStim: %.2f (%.2f)', nanmean(U.noStimDPrime), nanstd(U.noStimDPrime));
+  headerText{end + 1} = sprintf('Avg (SD) d''   stim: %.2f (%.2f)', nanmean(U.stimDPrime), nanstd(U.stimDPrime));
+  headerText{end + 1} = sprintf('Avg (SD) delta d'': %.2f (%.2f)', nanmean(U.noStimDPrime - U.stimDPrime), ...
+    nanstd(U.noStimDPrime - U.stimDPrime));
+  headerText{end + 1} = sprintf('Avg (SD) power (mW): %.3f (%.3f)', mean(U.meanPowerMW), std(U.meanPowerMW));
+  axisHandle = subplot(4, 3, plotIndex);						% default axes are 0 to 1
+  set(axisHandle, 'visible', 'off');
+  if plotIndex == 1
+    text(0.00, 1.25, 'Small Delta d''', 'FontWeight', 'bold', 'FontSize', 16);
+  else
+    text(0.00, 1.25, 'Large Delta d''', 'FontWeight', 'bold', 'FontSize', 16);
+  end
+  text(0.00, 1.10, headerText, 'VerticalAlignment', 'top');
+end
+
+%%
+function pairedBootPlots(plotIndex, smallHitCIs, bigHitCIs, limits, plotTitle, yLabel)
+
+  subplot(4, 3, plotIndex);
+  cla reset;  
+	x = 1:size(smallHitCIs, 2);
+  plot(x, smallHitCIs(2, :), 'b');
+  hold on;
+  x2 = [x, fliplr(x)];
+  fillCI = [smallHitCIs(1, :), fliplr(smallHitCIs(3, :))];
+  fill(x2, fillCI, 'b', 'lineStyle', '-', 'edgeColor', 'b', 'edgeAlpha', 0.5, 'faceAlpha', 0.10);
+  plot(x, bigHitCIs(2, :), 'r');
+  hold on;
+  x2 = [x, fliplr(x)];
+  fillCI = [bigHitCIs(1, :), fliplr(bigHitCIs(3, :))];
+  fill(x2, fillCI, 'r', 'lineStyle', '-', 'edgeColor', 'r', 'edgeAlpha', 0.5, 'faceAlpha', 0.10);
+
+  bins = length(smallHitCIs);
+  ax = gca;
+  xlim(ax, [0, bins]);
+  ax.XGrid = 'on';
+  [plotStartMS, plotEndMS, ~] = plotLimits();
+	plot([0, bins], [limits.yAxis, limits.yAxis], 'k-');
+  set(gca,'XTick', [0, -plotStartMS, -plotStartMS + 100, bins]);
+  set(gca, 'XTickLabel', {sprintf('%d', plotStartMS), '0', '', sprintf('%d', plotEndMS)});
+  xlabel('Time Relative to Stimulus');
+  ylabel(yLabel);
+  title(plotTitle);
+  hold off;
+end
+
+%%
+function plotKernelVDeltaDP(T)
+
+  subplot(2, 1, 2);
+  kernelPeak = -T.kernelPeak .* T.kernelCI;
+  deltaDPrime = T.stimDPrime - T.noStimDPrime;
+  plot(deltaDPrime, kernelPeak, 'o');
+  xlabel('Delta d''');
+  ylabel('Kernel Peak (normalized power)'); 
+  ylim([-2, 0]);
+  
+  subplot(2, 1, 1);
+  meanPowerMW = T.meanPowerMW;
+  plot(meanPowerMW, deltaDPrime, 'o');
+  ylabel('Delta d''');
+  xlabel('Mean Power (mW)'); 
+  ylim([-2, 0]);
+end
+
+%%
+function [smallDPs, bigDPs] = splitSessions(T, animals)
+
+  smallDPs = []; bigDPs = [];
+  for a = 1:length(animals)
+    A = T(T.animal == animals{a}, :);         % extract rows for this animals
+    A.dPrime = A.stimDPrime - A.noStimDPrime; % replace dPrime with delta dPrime
+    A = sortrows(A, 'dPrime');
+    targetSplit = sum(A.numStim) / 2;
+    row = 1; bigStimNum = 0;
+    while bigStimNum < targetSplit
+      bigStimNum = bigStimNum + A.numStim(row);
+      row = row + 1;
+    end
+    % Check whether we'd be closer to the split if we stopped one session earlier
+    if bigStimNum - targetSplit > targetSplit - (bigStimNum - A.numStim(row - 1))
+      row = row - 1;
+    end
+    bigDPs = [bigDPs; A(1:row - 1, :)]; %#ok<AGROW>
+    smallDPs = [smallDPs; A(row:end, :)]; %#ok<AGROW>
   end
 end

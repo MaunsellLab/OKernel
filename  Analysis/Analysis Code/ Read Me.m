@@ -5,6 +5,13 @@
 Should be run to set up the data for analysis.  This should be run whenever key analysis
 parameters have been changed. 
 
+01 grandAverageKernels()
+
+Plots the average across animals and session
+
+02 individualKernels() 
+
+Plots the averages for individual animals.  On a separate page it presents a summary of the kernels for all the animals
 
 Analysis code overview:
 

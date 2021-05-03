@@ -1,9 +1,10 @@
-function aggregate_Controls(subjectnum,controlCondition)
+function [dataFiles] = aggregate_Controls(subjectnum,controlCondition)
 %% only for plotted control data (does not set an inclusion criteria)
 % inputs:
 % subjectnum: subject number as a floating number. if more tan one, enclose
 % in brackets
-% controlCondition: 0 = pre-control; 1 = control; 2 = post-control
+% controlCondition: 0 = pre-control; 1 = control (5 sessions); 2 = post-control; 3 =
+% combine pre- and post-control (10 sessions total); 
 
 % The plots should include:
 %   1) Autocorrelogram of stimulus -- should be the triangle with 50 ms base (SEM for plots?)
@@ -16,37 +17,48 @@ datapath = '/Users/julian/Documents/MATLAB/OKernel/';
 %datapath for John's computer
 % datapath = '/Users/Shared/Data/OKernel/';
 
+CombinePreandPostControl = 1;
 
 %date ranges for each animal and condition
 
 %1218 = Sophie
-sophiePreCon  = {'2020-05-31','2020-06-05'};
-sophieCon = {'2020-06-06','2020-06-16'}; %began controls 6/6
-sophiePostCon = {'2020-06-17' , '2020-06-25'};
+sophiePreCon  = {'2020-06-01','2020-06-05'}; %{'2020-05-31','2020-06-05'};
+sophieCon = {'2020-06-12','2020-06-16'}; %{'2020-06-06','2020-06-16'}; %began controls 6/6
+sophiePostCon = {'2020-06-21' , '2020-06-25'};%{'2020-06-17' , '2020-06-25'};
 
 sophieSkip = {};
  
 %1257 = Sufjan
-sufjanPreCon = {'2020-05-25','2020-05-31'};
-sufjanCon = {'2020-05-30','2020-06-14'}; %began controls 5/30--6/7 and 6/9 not working?
-sufjanPostCon = {'2020-06-15' , '2020-06-25'};% controlCondition: 0 = pre-control; 1 = control; 2 = post-control
+sufjanPreCon = {'2020-05-25','2020-05-29'};
+sufjanCon = {'2020-06-10','2020-06-14'};%{'2020-05-30','2020-06-14'}; %began controls 5/30--6/7 and 6/9 not working?
+sufjanPostCon = {'2020-06-21' , '2020-06-25'};%{'2020-06-15' , '2020-06-25'};% controlCondition: 0 = pre-control; 1 = control; 2 = post-control
 
 %days to skip due to not enough trials
 sufjanSkip = {'2020-06-08'};
 
 %1220 = Caterina
 caterinaPreCon = {'2020-06-17' '2020-06-21'};%{'2020-05-24' '2020-06-21'};
-caterinaCon = {'2020-06-22' ,'2020-06-25'};
+caterinaCon = {'2020-06-22' ,'2020-06-28'};
 caterinaPostCon = {};
 
 caterinaSkip = {'2020-06-16'};
 
 %1150 = Joaquin
-joaquinPreCon = {'2020-06-07' '2020-06-14'}; 
+joaquinPreCon = {'2020-06-07', '2020-06-14'}; 
 joaquinCon = {};
 joaquinPostCon = {};
 
 joaquinSkip = {'2020-06-04','2020-06-09', '2020-06-11','2020-06-12'};
+
+
+if CombinePreandPostControl
+    %control sessions must total 10 per animal b/c pre and post will each
+    %be 5 per animal
+    sophieCon = {'2020-06-07','2020-06-16'}; 
+    sufjanCon = {'2020-06-04','2020-06-14'}; %skips over 06-08
+    
+    
+end
 
 if length(subjectnum) == 1
     nowsubject = num2str(subjectnum);
@@ -57,6 +69,9 @@ if length(subjectnum) == 1
         
         if controlCondition == 0 %    pre-control
             daterange = sophiePreCon;
+            if CombinePreandPostControl
+                daterange2 = sophiePostCon;
+            end
         elseif controlCondition == 1 % control
             daterange = sophieCon;
         elseif controlCondition == 2
@@ -70,6 +85,9 @@ if length(subjectnum) == 1
         
         if controlCondition == 0 %     pre-control
             daterange = sufjanPreCon;
+            if CombinePreandPostControl
+                daterange2 = sophiePostCon;
+            end
         elseif controlCondition == 1 % control
             daterange = sufjanCon;
         elseif controlCondition == 2 % post-control
@@ -110,7 +128,10 @@ if length(subjectnum) == 1
     end
     
     alldates = dateRange(daterange{1},daterange{2}); %must be format yyyy-mm-dd
-    
+    if CombinePreandPostControl && controlCondition == 0
+        alldates2 = dateRange(daterange2{1},daterange2{2});
+        alldates = [alldates alldates2];
+    end
     for i = 1:length(skipDates)
         for j = 1:length(alldates)
             if strcmp(skipDates{i},alldates{j})
@@ -146,6 +167,9 @@ else %more than one subject number
             
             if controlCondition == 0 %    pre-control
                 daterange = sophiePreCon;
+                if CombinePreandPostControl
+                    daterange2 = sophiePostCon;
+                end
             elseif controlCondition == 1 % control
                 daterange = sophieCon;
             elseif controlCondition == 2
@@ -159,6 +183,9 @@ else %more than one subject number
             
             if controlCondition == 0 %     pre-control
                 daterange = sufjanPreCon;
+                if CombinePreandPostControl
+                    daterange2 = sufjanPostCon;
+                end
             elseif controlCondition == 1 % control
                 daterange = sufjanCon;
             elseif controlCondition == 2 % post-control
@@ -204,7 +231,14 @@ else %more than one subject number
             daterange{2} = datestr(datetime('today'),'yyyy-mm-dd');
         end
         
+     
+        
         alldates = dateRange(daterange{1},daterange{2}); %must be format yyyy-mm-dd
+        
+        if CombinePreandPostControl && controlCondition == 0 && ~isempty(daterange2)
+            alldates2 = dateRange(daterange2{1},daterange2{2});
+            alldates = [alldates alldates2];
+        end
         
         for i = 1:length(skipDates)
             for j = 1:length(alldates)
@@ -221,6 +255,10 @@ else %more than one subject number
                     [datapath nowsubject '/MatFiles/' alldates{nowdate} '.mat']};
             end
         end
+        alldates = [];
+        alldates2 = [];
+        daterange = [];
+        daterange2 = [];
     end
 end
 
@@ -381,8 +419,10 @@ subjectnum(isnan(subjectnum)) = [];
     headerText{1} = sprintf('%d sessions from %d animals', numFiles, length(subjectnum));
     headerText{length(headerText) + 1} = sprintf('Reaction times from %d to %d ms', kernelRTMinMS, kernelRTMaxMS);
     headerText{length(headerText) + 2} = ['Animal number(s): ' num2str(subjectnum) ];
-    if controlCondition == 0
+    if controlCondition == 0 && ~CombinePreandPostControl
     headerText{length(headerText) + 3} = 'Condition: Pre-Control Stimulation Days' ;
+    elseif controlCondition == 0 && CombinePreandPostControl
+    headerText{length(headerText) + 3} = 'Condition: Pre/post-Control Stimulation Days (combined)' ;
     elseif controlCondition == 1
         headerText{length(headerText) + 3} = 'Condition: Control Stimulation Days' ;
     elseif controlCondition == 2

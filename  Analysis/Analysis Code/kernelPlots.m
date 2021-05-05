@@ -55,7 +55,7 @@ function kernelPlots
       limits.minSessions = 5;                     % require at least n sessions for each animal
       limits.minDec = -1;                         % stim trials can't have better performance
       limits.minDPrime = -1;                      % minimum d' in the no stim condition
-      limits.minDeltaDPrime = 0.10;               % minimum effect of opto stimulation
+      limits.minAvgDeltaDPrime = 0.10;               % minimum effect of opto stimulation
       limits.maxMeanPowerMW = 0.25;               % maximum average power over sesions
     case 'control'
       modeStr = ' Control';

@@ -26,10 +26,10 @@ function doHeader(U, limits)
     headerText{end + 1} = sprintf('%d sessions from Animal %s', size(U, 1), limits.animal);
   end
   headerText{end + 1} = sprintf('%d trial minimum for hits/misses', limits.minTrials);
-  if limits.minDeltaDPrime == -1
+  if limits.minAvgDeltaDPrime == -1
     headerText{end + 1} = 'No required delta-d'' with opto';
   else
-    headerText{end + 1} = sprintf('Delta d'' >=%.2f', limits.minDeltaDPrime);
+    headerText{end + 1} = sprintf('Delta d'' >=%.2f', limits.minAvgDeltaDPrime);
   end
   headerText{end + 1} = sprintf('Avg(SD) d'' noStim: %.2f (%.2f)', nanmean(U.noStimDPrime), nanstd(U.noStimDPrime));
   headerText{end + 1} = sprintf('Avg(SD) d''   stim: %.2f (%.2f)', nanmean(U.stimDPrime), nanstd(U.stimDPrime));

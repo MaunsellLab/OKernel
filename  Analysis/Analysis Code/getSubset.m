@@ -55,7 +55,7 @@ function [U, maxDate] = getSubset(mode, dataDirName, tableDataName, limits)
           U = U(~animalRows, :);
           continue;
         end
-        if limits.minDeltaDPrime >= 0 && nanmean(U.noStimDPrime(animalRows) - U.stimDPrime(animalRows)) < limits.minDeltaDPrime
+        if limits.minAvgDeltaDPrime >= 0 && nanmean(U.noStimDPrime(animalRows) - U.stimDPrime(animalRows)) < limits.minAvgDeltaDPrime
           fprintf('%s mean too low %.2f (n=%d)\n', ...
               animals{a}, nanmean(U.noStimDPrime(animalRows) - U.stimDPrime(animalRows)), sum(animalRows));
           U = U(~animalRows, :);

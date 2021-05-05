@@ -45,7 +45,7 @@ function U = selectUsingLimits(T, limits)
           U = U(~animalRows, :);
           continue;
         end
-        if limits.minDeltaDPrime >= 0 && nanmean(U.noStimDPrime(animalRows) - U.stimDPrime(animalRows)) < limits.minDeltaDPrime
+        if limits.minAvgDeltaDPrime >= 0 && nanmean(U.noStimDPrime(animalRows) - U.stimDPrime(animalRows)) < limits.minAvgDeltaDPrime
           U = U(~animalRows, :);
         end
       end

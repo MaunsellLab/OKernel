@@ -8,7 +8,7 @@ function preProcessAll
 % The data set processed is seleceted using whichData.m.  Currently supported are 'JDC' and 'JJC' for 
 % Julian Day-Cooney's and Jackson Cone's data
 
-  [dataDirName, tableName] = whichData();
+  [dataDirName, tableName = whichData();
   [varNames, varTypes] = tableNamesAndTypes();
   T = table('size', [0, length(varNames)], 'variableTypes', varTypes, 'variableNames', varNames);
   % count the number of sessions for online display
@@ -16,19 +16,19 @@ function preProcessAll
   numAnimals = length(animalNames);
   numSessions = 0;
   for a = 1:numAnimals
-      fileNames = getFileNames(animalNames{a});
+      fileNames = getFileNames([dataDirName animalNames{a} '/MatFiles/']);
       numSessions = numSessions + length(fileNames);
   end
   % compile each session
   session = 1;
   for a = 1:numAnimals
-      fileNames = getFileNames(animalNames{a});
+      fileNames = getFileNames([dataDirName animalNames{a} '/MatFiles/']);
       numFiles = length(fileNames);
       for f = 1:numFiles                                  	% for each file
           [~, fileName, ~] = fileparts(fileNames{f});      	% get file name
           fprintf('Session %4d of %4d: %4s %s\n', session, numSessions, animalNames{a}, fileName);
           session = session + 1;
-          if length(fileName) > 10
+          if length(fileName) > 10 || str2double(fileName(1:4)) > 2020	% skip unrelated types of file in folder
              continue; 
           end
 %           [row, stimProfiles] = doOneFile(dataDirName, '1145', '2020-03-21');
@@ -61,13 +61,13 @@ function [row, stimProfiles] = doOneFile(dataDirName, animalName, fileName)
       (strcmp(animalName, '1218') && fileName < "2020-03-23") || ...
       (strcmp(animalName, '1220') && fileName < "2020-04-07") || ...
       (strcmp(animalName, '1223') && fileName < "2020-02-16") || ...
-      (strcmp(animalName, '1257') && fileName < "2020-04-04")      
-    row = [];
-    stimProfiles = [];
-    return;
+      (strcmp(animalName, '1257') && fileName < "2020-04-04")
+      row = [];
+      stimProfiles = [];
+      return;
   end
   load([dataDirName animalName '/MatFiles/' fileName]); %#ok<LOAD>
-  if ~exist('trials', 'var') || ~isfield(trials, 'trial') || ~(str2double(animalName) == file.subjectNumber) %#ok<NODEF>
+  if ~exist('trials', 'var') || ~isfield(trials, 'trial') %#ok<NODEF>
     row = [];
     stimProfiles = [];
     return;
@@ -105,13 +105,12 @@ function animalNames = getAnimalNames()
 end
 
 %%
-function fileNames = getFileNames(animalName)
+function fileNames = getFileNames()
 
-    dataDirName = whichData();
-    dirStructs = dir([dataDirName animalName '/MatFiles/']);	% data directory contents
-    fileNames = {dirStructs(:).name};                             % data directory file names
+    [dirName, ~, projName] = whichData();
+    fileNames = {dirStructs(:).name};                       % data directory file names
     numFiles = length(fileNames);
-    validFiles = false(1, numFiles);                              % find only files with number names (animals)
+    validFiles = false(1, numFiles);                        % find only files with number names (animals)
     for f = 1:numFiles
       validFiles(f) = isstrprop(fileNames{f}(1), 'digit') && length(fileNames{f}) > 1;
       validFiles(f) = validFiles(f) & length(fileNames{f}) == 14;

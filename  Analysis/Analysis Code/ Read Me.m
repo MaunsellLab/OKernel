@@ -1,5 +1,7 @@
 %{
 
+whichData() is used to select which research project to analyze
+
 00 preProcessAll() 
 
 Should be run to set up the data for analysis.  This should be run whenever key analysis

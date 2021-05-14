@@ -53,11 +53,11 @@ function U = selectUsingLimits(T, limits)
   end
   if size(U, 1) == 0
     if length(limits.rampMS) == 1
-      fprintf('getSubset: No valid sessions found for ''%s'' for animal ''%s'' on %d ms ramps, minTrials %d and decrement %.2f\n', ...
-        mode, limits.animal, limits.rampMS, limits.minTrials, limits.minDec);
+      fprintf('getSubset: No valid sessions found for animal ''%s'' on %d ms ramps, minTrials %d and decrement %.2f\n', ...
+        limits.animal{1}, limits.rampMS, limits.minTrials, limits.minDec);
     else
-      fprintf('getSubset: No valid sessions found for ''%s'' for animal ''%s'' on multiple ramps, minTrials %d and decrement %.2f\n', ...
-        mode, limits.animal, limits.minTrials, limits.minDec);
+      fprintf('getSubset: No valid sessions found for animal ''%s'' on multiple ramps, minTrials %d and decrement %.2f\n', ...
+        limits.animal{1}, limits.minTrials, limits.minDec);
     end
   end
 end

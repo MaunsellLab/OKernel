@@ -4,30 +4,31 @@ function preProcessAll
 %  1) Find the response window to use, and assign trials to hits, misses, earlies
 %  2) Add a row for the file in the master table
 %  3) Make the stim profiles that are needed for bootstrapping kernels
-%  
+%
+% The data set processed is seleceted using whichData.m.  Currently supported are 'JDC' and 'JJC' for 
+% Julian Day-Cooney's and Jackson Cone's data
 
-  dataDirName = '/Users/Shared/Data/OKernel/';
-  tableName = ' Analysis/Mat Files/masterTable.mat';
+  [dataDirName, tableName] = whichData();
   [varNames, varTypes] = tableNamesAndTypes();
   T = table('size', [0, length(varNames)], 'variableTypes', varTypes, 'variableNames', varNames);
   % count the number of sessions for online display
-  animalNames = getFileNames(dataDirName);
+  animalNames = getAnimalNames();
   numAnimals = length(animalNames);
   numSessions = 0;
   for a = 1:numAnimals
-      fileNames = getFileNames([dataDirName animalNames{a} '/MatFiles/']);
+      fileNames = getFileNames(animalNames{a});
       numSessions = numSessions + length(fileNames);
   end
   % compile each session
   session = 1;
   for a = 1:numAnimals
-      fileNames = getFileNames([dataDirName animalNames{a} '/MatFiles/']);
+      fileNames = getFileNames(animalNames{a});
       numFiles = length(fileNames);
       for f = 1:numFiles                                  	% for each file
           [~, fileName, ~] = fileparts(fileNames{f});      	% get file name
           fprintf('Session %4d of %4d: %4s %s\n', session, numSessions, animalNames{a}, fileName);
           session = session + 1;
-          if length(fileName) > 10 || str2double(fileName(1:4)) > 2020	% skip unrelated types of file in folder
+          if length(fileName) > 10
              continue; 
           end
 %           [row, stimProfiles] = doOneFile(dataDirName, '1145', '2020-03-21');
@@ -60,13 +61,13 @@ function [row, stimProfiles] = doOneFile(dataDirName, animalName, fileName)
       (strcmp(animalName, '1218') && fileName < "2020-03-23") || ...
       (strcmp(animalName, '1220') && fileName < "2020-04-07") || ...
       (strcmp(animalName, '1223') && fileName < "2020-02-16") || ...
-      (strcmp(animalName, '1257') && fileName < "2020-04-04")
-      row = [];
-      stimProfiles = [];
-      return;
+      (strcmp(animalName, '1257') && fileName < "2020-04-04")      
+    row = [];
+    stimProfiles = [];
+    return;
   end
   load([dataDirName animalName '/MatFiles/' fileName]); %#ok<LOAD>
-  if ~exist('trials', 'var') || ~isfield(trials, 'trial') %#ok<NODEF>
+  if ~exist('trials', 'var') || ~isfield(trials, 'trial') || ~(str2double(animalName) == file.subjectNumber) %#ok<NODEF>
     row = [];
     stimProfiles = [];
     return;
@@ -77,19 +78,46 @@ function [row, stimProfiles] = doOneFile(dataDirName, animalName, fileName)
 end
 
 %%
-function fileNames = getFileNames(dirName)
+function animalNames = getAnimalNames()
 
+    [dirName, ~, projName] = whichData();
     dirStructs = dir(dirName);                              % data directory contents
-    fileNames = {dirStructs(:).name};                       % data directory file names
-    numFiles = length(fileNames);
+    animalNames = {dirStructs(:).name};                       % data directory file names
+    numFiles = length(animalNames);
     validFiles = false(1, numFiles);                        % find only files with number names (animals)
     for f = 1:numFiles
+      validFiles(f) = isstrprop(animalNames{f}(1), 'digit') && length(animalNames{f}) > 1;
+    end
+    animalNames = animalNames(validFiles);
+    fileValues = str2double(animalNames);                   % sort the files numerically
+    switch projName                                         % looking for only certain animals
+      case 'JDC'
+        validFiles = fileValues < 1400;
+      case 'JJC'
+        validFiles = fileValues >= 1400;
+      otherwise
+        fprintf('preProcessAll:getAnimalNames: unrecognized project name: %s', projName);
+    end
+    animalNames = animalNames(validFiles);
+    fileValues = fileValues(validFiles);
+    [~, indices] = sort(fileValues);
+    animalNames = animalNames(indices);
+end
+
+%%
+function fileNames = getFileNames(animalName)
+
+    dataDirName = whichData();
+    dirStructs = dir([dataDirName animalName '/MatFiles/']);	% data directory contents
+    fileNames = {dirStructs(:).name};                             % data directory file names
+    numFiles = length(fileNames);
+    validFiles = false(1, numFiles);                              % find only files with number names (animals)
+    for f = 1:numFiles
       validFiles(f) = isstrprop(fileNames{f}(1), 'digit') && length(fileNames{f}) > 1;
+      validFiles(f) = validFiles(f) & length(fileNames{f}) == 14;
     end
     fileNames = fileNames(validFiles);
-    fileValues = str2double(fileNames);                     % sort the files numerically
-    [~, indices] = sort(fileValues);
-    fileNames = fileNames(indices);
+    fileNames = sort(fileNames);
 end
 
 %%

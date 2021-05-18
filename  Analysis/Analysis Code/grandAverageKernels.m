@@ -1,8 +1,10 @@
 function grandAverageKernels
 % Plot all the kernels for the grand average across selected sessions, once for steps and once for ramps
 
-	dataDirName = '/Users/Shared/Data/OKernel/';
-  load([dataDirName ' Analysis/Mat Files/masterTable.mat'], 'T');
+% 	dataDirName = '/Users/Shared/Data/OKernel/';
+  [dataDirName, tableName] = whichData();
+%   load([dataDirName ' Analysis/Mat Files/masterTable.mat'], 'T');
+  load([dataDirName, tableName], 'T');
   limits = setLimits('All');
   rampLimits = [0, 500];
   for r = rampLimits

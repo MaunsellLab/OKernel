@@ -1,6 +1,7 @@
 %{
 
-whichData() is used to select which research project to analyze
+makeFigures() is used to create figures for publication
+whichData() is used to select where data are stored
 
 00 preProcessAll() 
 

@@ -30,13 +30,13 @@ function plotKernelPage(U, limits, stimProfiles)
   hitMissBoot = [stimProfiles.hitProfiles; -stimProfiles.missProfiles];
   subplot(4, 3, 6);
   doOneBootPlot(hitMissBoot, limits, 'stim', plotStartMS, plotEndMS, plotTitle, '');
-  if ~strcmp(limits.animal, 'All')
-    figure(2);
-    h = subplot(4, 3, limits.aniNum);
-    doOneBootPlot(hitMissBoot, limits, 'stim', plotStartMS, plotEndMS, plotTitle, '');
-    h.Title.String = strrep(h.Title.String, 'Weight by Trial', ['Animal ', limits.animal]);
-    figure(1);
-  end
+%   if ~strcmp(limits.animal, 'All')
+%     figure(2);
+%     h = subplot(4, 3, limits.aniNum);
+%     doOneBootPlot(hitMissBoot, limits, 'stim', plotStartMS, plotEndMS, plotTitle, '');
+%     h.Title.String = strrep(h.Title.String, 'Weight by Trial', ['Animal ', limits.animal]);
+%     figure(1);
+%   end
   
   % RT aligned kernel
   limits.yAxis = 0.5;

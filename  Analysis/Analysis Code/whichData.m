@@ -1,7 +1,4 @@
-function [dirName, tableName, projName] = whichData()
+function [dirName, tableName] = whichData()
 
-% projName = 'JDC';
-projName = 'JJC';
-
-tableName = sprintf(' Analysis/Mat Files/masterTable%s.mat', projName);
+tableName = sprintf(' Analysis/Mat Files/masterTable.mat');
 dirName = '/Users/Shared/Data/OKernel/';

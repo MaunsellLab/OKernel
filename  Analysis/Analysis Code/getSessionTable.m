@@ -1,4 +1,4 @@
-function [T, dataDirName, limits] = getSessionTable(theSubset)
+function [U, dataDirName, limits] = getSessionTable(theSubset)
 %
 % Return a subset of the complete session table.  This function serves as an authoritative selector for the subset
 % of ssessions used for the various analyses.  
@@ -13,10 +13,9 @@ function [T, dataDirName, limits] = getSessionTable(theSubset)
     T = [];
     return;
   end
-  controls = controlSessions(T);                                  % logic array flagging control sesions
-  valid = any(T.rampMS == limits.rampMS & T.kernelCI > 0, 2) & ~controls; % empty entries have zero for kernelCI
+  valid = any(T.rampMS == limits.rampMS & T.kernelCI > 0, 2);         % empty entries have zero for kernelCI
   if ~strcmp(limits.animal, 'All')
-    valid = valid & T.animal == limits.animal;
+    valid = valid & sum(T.animal == limits.animal, 2);
   end
   if ~isempty(limits.oneDay)
     valid = valid & T.date == limits.oneDay;
@@ -61,11 +60,11 @@ function [T, dataDirName, limits] = getSessionTable(theSubset)
   end
   if size(U, 1) == 0
     if length(limits.rampMS) == 1
-      fprintf('getSubset: No valid sessions found for ''%s'' for animal ''%s'' on %d ms ramps, minTrials %d and decrement %.2f\n', ...
-        mode, limits.animal, limits.rampMS, limits.minTrials, limits.minDec);
+      fprintf('getSubset: No valid sessions found for %d ms ramps, minTrials %d and decrement %.2f\n', ...
+        limits.rampMS, limits.minTrials, limits.minDec);
     else
-      fprintf('getSubset: No valid sessions found for ''%s'' for animal ''%s'' on multiple ramps, minTrials %d and decrement %.2f\n', ...
-        mode, limits.animal, limits.minTrials, limits.minDec);
+      fprintf('getSubset: No valid sessions found for multiple ramps, minTrials %d and decrement %.2f\n', ...
+        limits.minTrials, limits.minDec);
     end
   end
 end
@@ -102,6 +101,9 @@ function limits = setLimits(theSubset)
       limits.rampMS = 0;
       limits.animal = {'902'};
       limits.oneDay = '2019-10-10';
+    case {'oneOff', 'oneoff', 'One Off'}
+      limits.rampMS = 0;
+      limits.animal = {'1462', '1463'};
     otherwise
       fprintf('getSessionTable: unrecognized table type ''%s''\n', theSubset);
       limits = [];

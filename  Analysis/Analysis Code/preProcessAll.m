@@ -53,6 +53,19 @@ end
 %%
 function [row, stimProfiles] = doOneFile(dataDirName, animalName, fileName)
 %
+	if  (strcmp(animalName, '902') && fileName < "2019-09-13") || ...       // exclude training days
+      (strcmp(animalName, '905') && fileName < "2019-09-24") || ...
+      (strcmp(animalName, '1112') && fileName < "2020-02-04") || ...
+      (strcmp(animalName, '1145') && fileName < "2020-02-10") || ...
+      (strcmp(animalName, '1150') && fileName < "2020-01-16") || ...
+      (strcmp(animalName, '1218') && fileName < "2020-03-23") || ...
+      (strcmp(animalName, '1220') && fileName < "2020-04-07") || ...
+      (strcmp(animalName, '1223') && fileName < "2020-02-16") || ...
+      (strcmp(animalName, '1257') && fileName < "2020-04-04")      
+    row = [];
+    stimProfiles = [];
+    return;
+  end
   load([dataDirName animalName '/MatFiles/' fileName]); %#ok<LOAD>
   if ~exist('trials', 'var') || ~isfield(trials, 'trial') || ~(str2double(animalName) == file.subjectNumber) %#ok<NODEF>
     row = [];
@@ -67,7 +80,7 @@ end
 %%
 function animalNames = getAnimalNames()
 
-    [dirName] = whichData();
+    [dirName, ~, projName] = whichData();
     dirStructs = dir(dirName);                              % data directory contents
     animalNames = {dirStructs(:).name};                       % data directory file names
     numFiles = length(animalNames);
@@ -77,7 +90,14 @@ function animalNames = getAnimalNames()
     end
     animalNames = animalNames(validFiles);
     fileValues = str2double(animalNames);                   % sort the files numerically
-    validFiles = fileValues >= 1400;
+    switch projName                                         % looking for only certain animals
+      case 'JDC'
+        validFiles = fileValues < 1400;
+      case 'JJC'
+        validFiles = fileValues >= 1400;
+      otherwise
+        fprintf('preProcessAll:getAnimalNames: unrecognized project name: %s', projName);
+    end
     animalNames = animalNames(validFiles);
     fileValues = fileValues(validFiles);
     [~, indices] = sort(fileValues);

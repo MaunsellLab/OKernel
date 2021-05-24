@@ -22,10 +22,8 @@ function doHeader(U, limits)
     if mod(a, 4)
       headerText{end + 1} = animalList; 
     end
-  elseif length(limits.animal) == 1
-    headerText{end + 1} = sprintf('%d sessions from Animal %s', size(U, 1), limits.animal{1});
   else
-    headerText{end + 1} = sprintf('%d sessions from %d animals', size(U, 1), length(limits.animal));
+    headerText{end + 1} = sprintf('%d sessions from Animal %s', size(U, 1), limits.animal);
   end
   headerText{end + 1} = sprintf('%d trial minimum for hits/misses', limits.minTrials);
   if limits.minAvgDeltaDPrime == -1

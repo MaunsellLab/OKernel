@@ -30,9 +30,6 @@ function limits = setLimits(theSubset)
       limits.rampMS = 0;
       limits.animal = {'902'};
       limits.oneDay = '2019-10-10';
-    case {'OneOff', 'oneoff', 'oneOff'}
-      limits.rampMS = 0;
-      limits.animal = {'1462', '1463'};
     otherwise
       fprintf('getSessionTable: unrecognized table type ''%s''\n', theSubset);
       limits = [];

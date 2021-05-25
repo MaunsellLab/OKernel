@@ -1,4 +1,4 @@
-function [T, dataDirName, limits] = getSelectedTable(theSubset)
+function [U, dataDirName, limits] = getSelectedTable(theSubset)
 %
 % Return a subset of the complete session table.  This function serves as an authoritative selector for the subset
 % of sessions used for the various analyses. It applies the specific selection criteria that we use for analysis  

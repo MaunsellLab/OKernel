@@ -21,18 +21,6 @@ function [respLimitsMS, respLimitsR2] = stimRespStats(subset)
     end
     % Load and condition the data
     load(strcat(dataDirName, U.animal(s), '/MatFiles/', U.date(s)), 'file', 'trials');
-%     trialStructs = [trials(:).trial];
-%     meanPower = [trials(:).meanPowerMW];                        % get power applied for each trial                        
-%     if isfield(trialStructs, 'pulseContrast')                   % get rid of any trials with reduced opto power
-%         stimIndices = meanPower > 0 & [trialStructs.pulseContrast] == 1;	% only trials with contrast == 1
-%     else
-%         stimIndices = meanPower > 0;
-%     end
-%     % we only consider the range between the first and last stimulated trials
-%     firstStimIndex = find(stimIndices > 0, 1);                 	% first stimulated trial
-%     lastStimIndex = find(stimIndices > 0, 1, 'last');          	% last stimulated trial
-%     trials = trials(firstStimIndex:lastStimIndex);
-%     stimIndices = stimIndices(firstStimIndex:lastStimIndex);
     [stimIndices, trials] = getStimIndices(trials);
     if sum(stimIndices) == 0
       return

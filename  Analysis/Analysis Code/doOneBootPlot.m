@@ -17,7 +17,6 @@ function CIs = doOneBootPlot(bootstraps, limits, type, startTimeMS, endTimeMS, p
   if bins < 25
       return;
   end
-  
 	x = 1:size(CIs, 2);
   plot(x, CIs(2, :), 'b');
   hold on;
@@ -31,14 +30,14 @@ function CIs = doOneBootPlot(bootstraps, limits, type, startTimeMS, endTimeMS, p
 	plot([0, bins], [limits.yAxis, limits.yAxis], 'k-');
   switch type
     case {'stim', 'Stim'}
-      set(gca,'XTick', [0, -plotStartMS, -plotStartMS + 100, bins]);
-      set(gca, 'XTickLabel', {sprintf('%d', plotStartMS), '0', '', sprintf('%d', plotEndMS)});
+      set(gca,'XTick', [0, -plotStartMS, -plotStartMS + [100:100:300], bins]);
+      set(gca, 'XTickLabel', {sprintf('%d', plotStartMS), '0', '', '', '', sprintf('%d', plotEndMS)});
       xlabel('Time Relative to Stimulus');
     case {'rt', 'RT'}
       set(gca,'XTick', [0, -plotRTStartMS, bins]);
       set(gca, 'XTickLabel', {sprintf('%d', plotRTStartMS), '0', sprintf('%d', plotRTStartMS + plotEndMS - plotStartMS)});
       xlabel('Time Relative to RT');
-    case {'early', 'Early'}
+    case {'early', 'Early', 'FA'}
       set(gca,'XTick', [0, -plotRTStartMS, bins]);
       set(gca, 'XTickLabel', {sprintf('%d', plotRTStartMS), '0', sprintf('%d', plotRTStartMS + plotEndMS - plotStartMS)});
       xlabel('Time Relative to FA');

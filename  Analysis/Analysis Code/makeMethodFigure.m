@@ -7,17 +7,20 @@ function makeMethodFigure()
   end
   load(strcat(dataDir, U.animal, '/MatFiles/', U.date, '.mat'), 'file', 'trials');
   h = figure(10);
-  set(h, 'Units', 'inches', 'Position', [25, 14.5, 8.0, 11.0]);
+  set(h, 'Units', 'inches', 'Position', [25, 14.5, 8.0, 10.5]);
   clf;
   getStimProfiles(file, trials);
 	saveas(gcf, strcat(folderName, '/OptoStim.pdf'));
+  
+  % Get the plots for this figure, which includes the hit, miss and full kernels
   bootstraps = getCaseBootstraps(U, dataDir, limits.animal{1}, limits, true);
-  limits.numBoot = 25;
+  limits.numBoot = 100;
   limits.aniNum = 1;
   limits.animal = '902';
   doOneBootFigure(U, dataDir, 'Methods', limits, bootstraps);
+  sameYAxisScaling(4, 3, [4, 5], [0, 1]);         % force the kernels to have the same vertical scaling
+	sameYAxisScaling(4, 3, 6, [-0.5, 0.5]);
 	saveas(gcf, strcat(folderName, '/Kernels.pdf'));
-
 end
 
 %%
@@ -29,86 +32,26 @@ function getStimProfiles(file, trials)
   if sum(stimIndices) == 0
     return
   end  
-  meanPowers = [trials(:).meanPowerMW];                        % get power applied for each trial 
-  row.meanPowerMW = mean(meanPowers);
-  row.maxPowerMW = max(meanPowers);
-  trialStructs = [trials(:).trial];
-  eotCodes = zeros(1, length(trials));                        % one and only one RT and endTrial per trial
-  for t = 1:length(trials)                               
-      if length(trials(t).reactTimeMS) > 1
-          trials(t).reactTimeMS = trials(t).reactTimeMS(1);   
-      end
-      if ~isfield(trials(t), 'trialEnd') || isempty(trials(t).trialEnd)
-          trials(t).trialEnd = -1;
-      end
-      if length(trials(t).trialEnd) > 1
-          trials(t).trialEnd = trials(t).trialEnd(1);   
-      end
-      eotCodes(t) = trials(t).trialEnd;
-  end
-  RTs = [trials(:).reactTimeMS];                              % get all trial RTs  
-	preStimMS = [trialStructs(:).preStimMS];                  	% get preStim times for each trial  
-
-  % calculate the overall d'
-  theIndices = allIndices(trials, eotCodes, stimIndices);
+  % get the raw indices for EOTs in the data file
+  [theIndices, trials] = allIndices(trials);
   if sum(theIndices.correct | theIndices.fail | theIndices.early) < 10
     return;
   end
   % find the response interval and get a modified set of indices that limits hits to only that interval
-	[respLimitsMS, theIndices, ~, ~] = getResponseLimits(file, trials, theIndices);
-  row.RTWindowMS = diff(respLimitsMS);
-  row.noStimCorrects = sum(theIndices.correct & ~stimIndices);
-  row.noStimFails = sum(theIndices.fail & ~stimIndices);
-  row.noStimEarlies = sum(theIndices.early & ~stimIndices); 
-  row.numNoStim = row.noStimCorrects + row.noStimFails + row.noStimEarlies;  % don't count kEOTIgnored
-  row.stimCorrects = sum(theIndices.correct & stimIndices);
-  row.stimFails = sum(theIndices.fail & stimIndices);
-  row.stimEarlies = sum(theIndices.early & stimIndices);
-  row.numStim = row.stimCorrects + row.stimFails + row.stimEarlies;                  % don't count kEOTIgnored
-
-  % find the performance across stim and nostim trials combined
-  hitRate = sum(theIndices.correct) / (sum(theIndices.correct) + sum(theIndices.fail));
-  rateEarly = earlyRate(file, trials, theIndices.correct, theIndices.fail, theIndices.early);
-  row.pFA = 1.0 - exp(-rateEarly * row.RTWindowMS / 1000.0);
-  row.pHit = (hitRate - row.pFA) / (1.0 - row.pFA);
-  [row.dPrime, row.c] = dprime(row.pHit, row.pFA, true);
-  
-  % calculate the nostim trial d' using the all-trial pFA and the all-trial response window
-  indices.correct = theIndices.correct & ~stimIndices;
-  indices.fail = theIndices.fail & ~stimIndices;
-  indices.early = theIndices.early & ~stimIndices;
-  if sum(indices.correct | indices.fail | indices.early) > 0
-    hitRate = sum(indices.correct) / (sum(indices.correct) + sum(indices.fail));
-    rateEarly = earlyRate(file, trials, indices.correct, indices.fail, indices.early);
-    row.noStimPFA = 1.0 - exp(-rateEarly * row.RTWindowMS / 1000.0);
-    row.noStimPHit = (hitRate - row.pFA) / (1.0 - row.pFA);         % using overall pFA
-    [row.noStimDPrime, row.noStimC] = dprime(row.noStimPHit, row.pFA, true);
-  end
-    
+	[~, theIndices, ~, ~] = getResponseLimits(file, trials, theIndices);
+      
   % calculate the stim trial d' using the all-trial pFA and the all-trial response window
   indices.correct = theIndices.correct & stimIndices;
   indices.fail = theIndices.fail & stimIndices;
-  indices.early = theIndices.early & stimIndices;
-  if sum(indices.correct | indices.fail | indices.early) > 0
-    hitRate = sum(indices.correct) / (sum(indices.correct) + sum(indices.fail));
-    rateEarly = earlyRate(file, trials, indices.correct, indices.fail, indices.early);
-    row.stimPFA = 1.0 - exp(-rateEarly * row.RTWindowMS / 1000.0);
-    row.stimPHit = (hitRate - row.pFA) / (1.0 - row.pFA);   % using overall pFA
-    [row.stimDPrime, row.stimC] = dprime(row.stimPHit, row.pFA, true);
-  end
-  
-  % get the various kernels.  We use the indices set up in the previous block that include only stimulated trials.
-  
-%   [plotStartMS, plotEndMS, plotRTStartMS] = plotLimits();     % get the limits for the plots we will display  
-  % get the hit kernel.  We use the indices set up to have only stimulated trials within the detected response window.
-%   profiles = getTrialStimProfiles(trials(indices.correct), plotStartMS, plotEndMS, true, false);
-
-  tIndices = find(indices.correct | indices.fail);
   
 % The following will display all the individual trials, with a trial index.  Those index values can be used in the
 % following alternative line to select files to plot in the figure.
 
 %   profiles = screenProfiles(file, trials(indices.correct | indices.fail));
+  
+%% The following will display a selected subset of the trials, selected using the call to screenProfiles
+
+  tIndices = find(indices.correct | indices.fail);
   selectedTrials = [11, 7, 5, 17, 8, 10];
   trialLabels = [sum(indices.correct | indices.fail), length(selectedTrials) - 1:-1:1];
   plotProfiles(file, trials(tIndices(selectedTrials)), trialLabels);
@@ -119,57 +62,6 @@ function getStimProfiles(file, trials)
   trialLabels = [sum(indices.fail), length(selectedTrials) - 1:-1:1];
   plotProfileType(3, trials(tIndices(selectedTrials)), trialLabels);
   
-%   hitSums(:) = normSum(profiles);
-%   hitSums(:) = sum(profiles, 1);
-%   hitKernel = hitSums / row.stimCorrects;
-%   row.hitKernel = {hitKernel};
-%   hitCI = stimCI(row.stimCorrects);
-% 
-%   % get the RT aligned kernel
-%   profiles = getTrialStimProfiles(trials(indices.correct), plotRTStartMS, plotRTStartMS + plotEndMS - plotStartMS, true, true);
-% %   RTSum(:) = normSum(profiles);
-%   RTSum(:) = sum(profiles, 1);
-%   row.RTKernel = {RTSum / row.stimCorrects};
-% 
-%   % get the Stim & RT aligned hit kernel
-%   profiles = getStimRTProfiles(trials(indices.correct), plotStartMS, plotEndMS);
-% %   SRTSum(:) = normSum(profiles);
-%   SRTSum(:) = sum(profiles, 1);
-%   row.SRTKernel = {SRTSum / row.stimCorrects};
-% 
-%   % get the fail kernel
-%   profiles = getTrialStimProfiles(trials(indices.fail), plotStartMS, plotEndMS, true, false);
-%   failSum(:) = sum(profiles, 1);
-%   failKernel = failSum / row.stimFails;
-%   row.failKernel = {failKernel};
-%   failCI = stimCI(row.stimFails);
-% 
-%   % Get the early kernel.  Eliminate trials that start before the end of the ramping stimulus.
-% 	earlyIndices = indices.early & (preStimMS + RTs + plotRTStartMS > 200);
-%   if row.stimEarlies > 0
-%       profiles = getTrialStimProfiles(trials(earlyIndices), plotRTStartMS, plotRTStartMS + plotEndMS - plotStartMS, true, true);
-%       earlySum(:) = normSum(profiles);
-%       row.stimEarlies = size(profiles, 1);                  % getStimProfiles might reject some trials as too short
-%       row.earlyKernel = {earlySum / row.stimEarlies};
-%   end
-% 
-%   % If we have corrects and fails, save the hit, fail, total and random kernels.
-%   row.kernelCI = sqrt(hitCI^2 + failCI^2);
-%   if ~isempty(hitKernel) && ~isempty(failKernel)
-%     row.peakMinMS = plotStartMS;
-%     row.peakMaxMS = plotEndMS;
-%     startIndex = row.peakMinMS - plotStartMS + 1;
-%     endIndex = row.peakMaxMS - plotStartMS;
-%     row.kernelPeak =  max(abs((hitKernel(startIndex:endIndex) - failKernel(startIndex:endIndex))) / row.kernelCI);
-%     row.randomKernel = getRandomKernel(row.stimCorrects, row.stimFails, trialStructs(1).pulseDurMS, plotEndMS - plotStartMS);
-%   end
-% 
-%   % add to the RT distributions
-%   row.correctRTs = {[trials(theIndices.correct).reactTimeMS]};
-%   row.earlyRTs = {[trials(theIndices.early).reactTimeMS]};
-%   failRTs = [trials(theIndices.fail).reactTimeMS];
-%   failRTs(failRTs < 0 | failRTs > 100000) = 100000;     % include fails in count, but don't let them display on plot
-%   row.failRTs = {failRTs};
 end
 
 %%

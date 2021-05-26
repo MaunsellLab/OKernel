@@ -33,15 +33,16 @@ function bootstraps = getCaseBootstraps(U, dataDirName, dataName, limits, mustRe
 end
 
 %%
-function [row, hitIndices, missIndices, faIndices] = countsAndIndices(doStim, row, file, trials, eotCodes, stimIndices)
+function [row, hitIndices, missIndices, faIndices] = countsAndIndices(doStim, row, file, trials, eotCodes, ...  
+                                                                          theIndices, stimIndices)
 
   trialStructs = [trials(:).trial];                           % move trialStructs to an array for access
 	preStimMS = [trialStructs(:).preStimMS];                  	% get preStim times for each trial
   RTs = [trials(:).reactTimeMS];                              % get all trial RTs
   indices = stimIndices == doStim;                            % get indices for stim (or noStim) trials
-	hitIndices = indices & eotCodes == 0;                       % get hit trials from OK
-  faIndices = indices & eotCodes == 1;                        % get fa trials from OK
-  missIndices = indices & eotCodes == 2;                      % get miss trials from OK
+	hitIndices = indices & theIndices.correct;                 	% get hit trials from OK
+  faIndices = indices & theIndices.early;                     % get fa trials from OK
+  missIndices = indices & theIndices.fail;                    % get miss trials from OK
   
   % Calculate Hit & FA rates based simply on the EOT codes
   if doStim
@@ -83,45 +84,16 @@ function bootstraps = getFileProfiles(bootstraps, file, trials, row)
 % Compute kernels for a session
   [stimIndices, trials] = getStimIndices(trials);
   if sum(stimIndices) == 0
-    
     return
   end
-%   trialStructs = [trials(:).trial];
-%   meanPower = [trials(:).meanPowerMW];                        % get power applied for each trial                        
-%   if sum(meanPower) == 0                                      % no opto stimulation in this session
-%       return;
-%   end
-%   if isfield(trialStructs, 'pulseContrast')                   % get rid of any trials with reduced opto power
-%       stimIndices = meanPower > 0 & [trialStructs.pulseContrast] == 1;	% only trials with contrast == 1
-%   else
-%       stimIndices = meanPower > 0;
-%   end
-%   if sum(stimIndices) == 0                                    % no trials with full opto contrast
-%     return;
-%   end
-%   firstStimIndex = find(stimIndices > 0, 1);                 	% first stimulated trial
-% 	lastStimIndex = find(stimIndices > 0, 1, 'last');          	% last stimulated trial
-%   
-%   % we are only going to consider the range between the first and last stimulated trials
-%   trials = trials(firstStimIndex:lastStimIndex);
-% %   trialStructs = trialStructs(firstStimIndex:lastStimIndex);
-% %   meanPower = meanPower(firstStimIndex:lastStimIndex);
-%   stimIndices = stimIndices(firstStimIndex:lastStimIndex);
-  
-  eotCodes = zeros(1, length(trials));                        % one, only one RT and endTrial per trial
-  for t = 1:length(trials)                               
-      if length(trials(t).reactTimeMS) > 1
-          trials(t).reactTimeMS = trials(t).reactTimeMS(1);   
-      end
-      if ~isfield(trials(t), 'trialEnd') || isempty(trials(t).trialEnd)
-          trials(t).trialEnd = -1;
-      end
-      eotCodes(t) = trials(t).trialEnd;
-  end
+  [theIndices, trials] = allIndices(trials);
+  % find the response interval and get a modified set of indices that limits hits to only that interval
+	[~, theIndices, ~, ~] = getResponseLimits(file, trials, theIndices);
+  eotCodes = [trials(:).trialEnd]; 
   
   % get the counts for non-stimulated trials and then the stimulated trials
-	[row, ~, ~, ~] = countsAndIndices(false, row, file, trials, eotCodes, stimIndices);
-	[row, hitIndices, missIndices, faIndices] = countsAndIndices(true, row, file, trials, eotCodes, stimIndices);
+	[row, ~, ~, ~] = countsAndIndices(false, row, file, trials, eotCodes, theIndices, stimIndices);
+	[row, hitIndices, missIndices, faIndices] = countsAndIndices(true, row, file, trials, eotCodes, theIndices, stimIndices);
   [plotStartMS, plotEndMS, plotRTStartMS] = plotLimits();     % get the limits for the plots we will make
 
   % get the hit kernel    

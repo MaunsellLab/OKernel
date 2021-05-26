@@ -67,27 +67,32 @@ end
 function fileProfiles = getFileProfiles(file, trials, row)
 
 % Compute kernels for a session
-  trialStructs = [trials(:).trial];
-  meanPower = [trials(:).meanPowerMW];                        % get power applied for each trial                        
-  if sum(meanPower) == 0                                      % no opto stimulation in this session
-      return;
+  [stimIndices, trials] = getStimIndices(trials);
+  if sum(stimIndices) == 0
+    return
   end
-  if isfield(trialStructs, 'pulseContrast')                   % get rid of any trials with reduced opto power
-      stimIndices = meanPower > 0 & [trialStructs.pulseContrast] == 1;	% only trials with contrast == 1
-  else
-      stimIndices = meanPower > 0;
-  end
-  if sum(stimIndices) == 0                                    % no trials with full opto contrast
-    return;
-  end
-  firstStimIndex = find(stimIndices > 0, 1);                 	% first stimulated trial
-	lastStimIndex = find(stimIndices > 0, 1, 'last');          	% last stimulated trial
-  
-  % we are only going to consider the range between the first and last stimulated trials
-  trials = trials(firstStimIndex:lastStimIndex);
-  trialStructs = trialStructs(firstStimIndex:lastStimIndex);
-%   meanPower = meanPower(firstStimIndex:lastStimIndex);
-  stimIndices = stimIndices(firstStimIndex:lastStimIndex);
+
+%   trialStructs = [trials(:).trial];
+%   meanPower = [trials(:).meanPowerMW];                        % get power applied for each trial                        
+%   if sum(meanPower) == 0                                      % no opto stimulation in this session
+%       return;
+%   end
+%   if isfield(trialStructs, 'pulseContrast')                   % get rid of any trials with reduced opto power
+%       stimIndices = meanPower > 0 & [trialStructs.pulseContrast] == 1;	% only trials with contrast == 1
+%   else
+%       stimIndices = meanPower > 0;
+%   end
+%   if sum(stimIndices) == 0                                    % no trials with full opto contrast
+%     return;
+%   end
+%   firstStimIndex = find(stimIndices > 0, 1);                 	% first stimulated trial
+% 	lastStimIndex = find(stimIndices > 0, 1, 'last');          	% last stimulated trial
+%   
+%   % we are only going to consider the range between the first and last stimulated trials
+%   trials = trials(firstStimIndex:lastStimIndex);
+% %   trialStructs = trialStructs(firstStimIndex:lastStimIndex);
+% %   meanPower = meanPower(firstStimIndex:lastStimIndex);
+%   stimIndices = stimIndices(firstStimIndex:lastStimIndex);
   
   eotCodes = zeros(1, length(trials));                        % one, only one RT and endTrial per trial
   for t = 1:length(trials)                               
@@ -103,8 +108,8 @@ function fileProfiles = getFileProfiles(file, trials, row)
   % get the counts for non-stimulated trials
 	[row, ~, ~, ~] = countsAndIndices(false, row, file, trials, eotCodes, stimIndices);
   % get the counts for stimulated trials
-	[row, hitIndices, missIndices, faIndices] = countsAndIndices(true, row, file, trials, eotCodes, stimIndices);
-  [plotStartMS, plotEndMS, plotRTStartMS] = plotLimits();     % get the limits for the plots we will make
+	[~, hitIndices, missIndices, ~] = countsAndIndices(true, row, file, trials, eotCodes, stimIndices);
+  [plotStartMS, plotEndMS, ~] = plotLimits();     % get the limits for the plots we will make
 
   % get the hit kernel    
   hitProfiles = getStimProfiles(trials(hitIndices), plotStartMS, plotEndMS, true, false);

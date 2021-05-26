@@ -125,26 +125,32 @@ function [row, stimProfiles] = getKernels(file, trials, row)
 %
 % Compute kernels for one session
 %
+  [stimIndices, trials] = getStimIndices(trials);
+  if sum(stimIndices) == 0
+    row = [];
+    stimProfiles = [];
+    return
+  end
   trialStructs = [trials(:).trial];
-  meanPower = [trials(:).meanPowerMW];                        % get power applied for each trial 
-  row.meanPowerMW = mean(meanPower);
-  row.maxPowerMW = max(meanPower);
-  if isfield(trialStructs, 'pulseContrast')                   % get rid of any trials with reduced opto power
-      stimIndices = meanPower > 0 & [trialStructs.pulseContrast] == 1;	% only trials with contrast == 1
-  else
-      stimIndices = meanPower > 0;
-  end
-  if sum(stimIndices) == 0                                    % no stimulation with full opto contrast
-    row = []; stimProfiles = [];
-    return;
-  end
-  
-  % we only consider the range between the first and last stimulated trials
-  firstStimIndex = find(stimIndices > 0, 1);                 	% first stimulated trial
-	lastStimIndex = find(stimIndices > 0, 1, 'last');          	% last stimulated trial
-  trials = trials(firstStimIndex:lastStimIndex);
-  trialStructs = trialStructs(firstStimIndex:lastStimIndex);
-  stimIndices = stimIndices(firstStimIndex:lastStimIndex);
+%   meanPower = [trials(:).meanPowerMW];                        % get power applied for each trial 
+%   row.meanPowerMW = mean(meanPower);
+%   row.maxPowerMW = max(meanPower);
+%   if isfield(trialStructs, 'pulseContrast')                   % get rid of any trials with reduced opto power
+%       stimIndices = meanPower > 0 & [trialStructs.pulseContrast] == 1;	% only trials with contrast == 1
+%   else
+%       stimIndices = meanPower > 0;
+%   end
+%   if sum(stimIndices) == 0                                    % no stimulation with full opto contrast
+%     row = []; stimProfiles = [];
+%     return;
+%   end
+%   
+%   % we only consider the range between the first and last stimulated trials
+%   firstStimIndex = find(stimIndices > 0, 1);                 	% first stimulated trial
+% 	lastStimIndex = find(stimIndices > 0, 1, 'last');          	% last stimulated trial
+%   trials = trials(firstStimIndex:lastStimIndex);
+%   trialStructs = trialStructs(firstStimIndex:lastStimIndex);
+%   stimIndices = stimIndices(firstStimIndex:lastStimIndex);
   
   eotCodes = zeros(1, length(trials));                        % one and only one RT and endTrial per trial
   for t = 1:length(trials)                               

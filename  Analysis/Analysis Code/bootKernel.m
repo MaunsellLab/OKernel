@@ -23,7 +23,6 @@ function bootKernel
     h = figure(1);
     set(h, 'Units', 'inches', 'Position', [25, 14.5, 8.0, 11.0]);
     clf;
-    clf;
     subplot(3, 2, 1);
     plot(CI50);
     hold on;

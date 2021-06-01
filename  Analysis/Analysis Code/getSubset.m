@@ -43,7 +43,7 @@ function [U, maxDate] = getSubset(mode, dataDirName, tableDataName, limits)
 	U.noStimDPrime(U.noStimDPrime == Inf) = NaN; 
 	U.stimDPrime(U.stimDPrime == Inf) = NaN; 
  
-  % Some limits related to over-session performance.  We can requie a minimum number of sessions for each animal/ramp,
+  % Some limits related to multi-session performance.  We can require a minimum number of sessions for each animal/ramp,
   % and a minimum average delta-d'.
   if isempty(limits.oneDay)
     animals = unique(U.animal);

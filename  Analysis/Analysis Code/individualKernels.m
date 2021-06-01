@@ -2,16 +2,14 @@ function individualKernels
 % Plot all the kernels for the grand average across selected sessions, once for steps and once for ramps
 
   rampMS = 0;
-  animals = {'902', '1112', '1145', '905', '1223'};
+  animals = {'1462', '1463'};
 
-%   rampMS = 500;
-%   animals = {'902', '1112', '1150'};
   
   h = figure(2);
   set(h, 'Units', 'inches', 'Position', [25, 1.25, 8.5, 11]);
   clf;
   
-	dataDirName = '/Users/Shared/Data/OKernel/';
+  dataDirName = '/Users/jacksoncone/Dropbox/PostDoctoral Projects/!Experiments/Colliculus/BehavData/';
   load([dataDirName ' Analysis/Mat Files/masterTable.mat'], 'T');
   limits = setLimits('All');
   limits.rampMS = rampMS;

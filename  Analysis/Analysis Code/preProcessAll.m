@@ -1,5 +1,5 @@
 function preProcessAll
-% Preprocess OKernel data for analysis.  This should be run whenever key analysis features are changed
+% Preprocess SCernel data for analysis.  This should be run whenever key analysis features are changed
 % Starting from scratch, prepare all data files for analysis.  We scan through every file doing the following:
 %  1) Find the response window to use, and assign trials to hits, misses, earlies
 %  2) Add a row for the file in the master table

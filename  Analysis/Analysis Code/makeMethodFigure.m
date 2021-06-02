@@ -10,8 +10,8 @@ function makeMethodFigure()
   set(h, 'Units', 'inches', 'Position', [25, 14.5, 8.0, 10.5]);
   clf;
   getStimProfiles(file, trials);
-	saveas(gcf, strcat(folderName, '/OptoStim.pdf'));
-  
+% 	saveas(gcf, strcat(folderName, '/OptoStim.pdf'));
+  exportgraphics(gcf, strcat(folderName, '/OptoStim.pdf'),'contentType', 'vector');
   % Get the plots for this figure, which includes the hit, miss and full kernels
   bootstraps = getCaseBootstraps(U, dataDir, limits.animal{1}, limits, true);
   limits.numBoot = 100;
@@ -20,7 +20,8 @@ function makeMethodFigure()
   doOneBootFigure(U, dataDir, 'Methods', limits, bootstraps);
   sameYAxisScaling(4, 3, [4, 5], [0, 1]);         % force the kernels to have the same vertical scaling
 	sameYAxisScaling(4, 3, 6, [-0.5, 0.5]);
-	saveas(gcf, strcat(folderName, '/Kernels.pdf'));
+% 	saveas(gcf, strcat(folderName, '/Kernels.pdf'));
+  exportgraphics(gcf, strcat(folderName, '/Kernels.pdf'),'contentType', 'vector');
 end
 
 %%

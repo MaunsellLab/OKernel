@@ -6,7 +6,7 @@ function limits = setLimits(theSubset)
   limits.minDec = -1;
   limits.minDPrime = -1;
   limits.minAvgDeltaDPrime = 0.10;
-  limits.maxMeanPowerMW = 0.25;
+  limits.maxMeanPowerMW = 0.5;
   limits.animal = {'All'};
   limits.oneDay = [];
   switch theSubset

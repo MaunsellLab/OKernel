@@ -5,8 +5,7 @@ function preProcessAll
 %  2) Add a row for the file in the master table
 %  3) Make the stim profiles that are needed for bootstrapping kernels
 %
-% The data set processed is seleceted using whichData.m.  Currently supported are 'JDC' and 'JJC' for 
-% Julian Day-Cooney's and Jackson Cone's data
+% The data set processed is selected using whichData.m. 
 
   [dataDirName, tableName] = whichData();
   [varNames, varTypes] = tableNamesAndTypes();

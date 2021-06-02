@@ -3,7 +3,7 @@ function plotKernelPage(U, limits, stimProfiles)
   display(U);
   [plotStartMS, plotEndMS, plotRTStartMS] = plotLimits();
   
-  h = figure(1);
+  h = figure;
   set(h, 'Units', 'inches', 'Position', [25, 1.25, 8.5, 11]);
   clf;
   ylabel = 'Normalized Power';
@@ -76,7 +76,7 @@ function plotKernelPage(U, limits, stimProfiles)
   earlyRTs = cat(2, U.earlyRTs{:});
   failRTs = cat(2, U.failRTs{:});
   doRTHistogramPlot(correctRTs, earlyRTs, failRTs, minRespTimeMS, maxRespTimeMS);
-  doRTPDFPlot(correctRTs, earlyRTs, failRTs, minRespTimeMS, maxRespTimeMS)
+  doRTPDFPlot(correctRTs, earlyRTs, failRTs, minRespTimeMS, maxRespTimeMS);
 
   % Coordinate the scaling across plots
   sameYAxisScaling(4, 3, [4, 5, 7, 8, 10]);

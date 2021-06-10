@@ -4,11 +4,6 @@ function individualKernels
   rampMS = 0;
   animals = {'1462', '1463'};
 
-  
-%   h = figure(2);
-%   set(h, 'Units', 'inches', 'Position', [25, 1.25, 8.5, 11]);
-%   clf;
-  
   dataDirName = '/Users/jacksoncone/Dropbox/PostDoctoral Projects/!Experiments/Colliculus/BehavData/';
   load([dataDirName ' Analysis/Mat Files/masterTable.mat'], 'T');
   limits = setLimits('All');

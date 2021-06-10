@@ -264,12 +264,18 @@ function [row, stimProfiles] = getKernels(file, trials, row)
   row.kernelCI = sqrt(hitCI^2 + failCI^2);
   if ~isempty(hitKernel) && ~isempty(failKernel)
     row.kernelPeak =  max(abs((hitKernel(1:plotEndMS - plotStartMS) - failKernel(1:plotEndMS - plotStartMS))) / row.kernelCI);
-    row.randomKernel = getRandomKernel(row.stimCorrects, row.stimFails, trialStructs(1).pulseDurMS, plotEndMS - plotStartMS);
+    row.randomKernel = {getRandomKernel(row.stimCorrects, row.stimFails, trialStructs(1).pulseDurMS, plotEndMS - plotStartMS)};
   end
 
-  % add to the RT distributions
-  row.correctRTs = {[trials(theIndices.correct).reactTimeMS]};
-  row.earlyRTs = {[trials(theIndices.early).reactTimeMS]};
+  % add to the RT distributions (Do this for each stim type, can be re-combined later if needed)
+  row.topUpCorrectRTs = {[trials(theIndices.correct & ~stimIndices & topUpContIdx).reactTimeMS]};
+  row.stimCorrectRTs = {[trials(theIndices.correct & ~stimIndices & testContIdx).reactTimeMS]};
+  row.noStimCorrectRTs = {[trials(theIndices.correct & stimIndices & testContIdx).reactTimeMS]};
+  
+  row.topUpEarlyRTs = {[trials(theIndices.early & ~stimIndices & topUpContIdx).reactTimeMS]};
+  row.stimEarlyRTs = {[trials(theIndices.early & ~stimIndices & testContIdx).reactTimeMS]};
+  row.noStimEarlyRTs = {[trials(theIndices.early & stimIndices & testContIdx).reactTimeMS]};
+  
   failRTs = [trials(theIndices.fail).reactTimeMS];
   failRTs(failRTs < 0 | failRTs > 100000) = 100000;     % include fails in count, but don't let them display on plot
   row.failRTs = {failRTs};
@@ -341,9 +347,13 @@ function row = initializeRow(animalName, fileName, rampMS)
   row.randomKernel = {0};
   row.startRT = 0;
   row.endRT = 0;
-  row.correctRTs = {0};
+  row.topUpCorrectRTs = {0};
+  row.stimCorrectRTs = {0};
+  row.noStimCorrectRTs = {0};
+  row.topUpEarlyRTs = {0};
+  row.stimEarlyRTs = {0};
+  row.noStimEarlyRTs = {0};
   row.failRTs = {0};
-  row.earlyRTs = {0};
 end
 
 %%
@@ -364,7 +374,8 @@ function [names, types] = tableNamesAndTypes()
     'pFA', 'topUpPHit', 'topUpDPrime', 'topUpC', ...
     'stimPHit', 'stimPFA', 'stimDPrime', 'stimC', 'noStimPHit', 'noStimPFA', 'noStimDPrime', 'noStimC', ...
     'kernelCI', 'kernelPeak', 'hitKernel', 'failKernel', 'earlyKernel', 'RTKernel', 'SRTKernel', 'randomKernel', ...
-    'startRT', 'endRT', 'correctRTs', 'failRTs', 'earlyRTs'};
+    'startRT', 'endRT', ...
+    'topUpCorrectRTs', 'stimCorrectRTs','noStimCorrectRTs' 'topUpEarlyRTs', 'stimEarlyRTs', 'noStimEarlyRTs', 'failRTs'};
   types = {'string', 'string', 'uint32', 'double', 'double', 'double', ...
     'uint32', 'uint32', 'uint32', 'uint32', ...
     'uint32', 'uint32', 'uint32', 'uint32', ...
@@ -372,7 +383,8 @@ function [names, types] = tableNamesAndTypes()
     'double', 'double',  'double', 'double', ...
     'double', 'double', 'double',  'double', 'double', 'double', 'double',  'double', ...
     'double', 'double', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell', ...
-    'uint32', 'uint32', 'cell', 'cell', 'cell'};
+    'uint32', 'uint32', ...
+    'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell'};
 end
 
  

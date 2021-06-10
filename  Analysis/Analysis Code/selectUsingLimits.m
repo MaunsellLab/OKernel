@@ -31,6 +31,10 @@ function U = selectUsingLimits(T, limits)
   if limits.maxMeanPowerMW ~= -1
     valid = valid & (T.meanPowerMW <= limits.maxMeanPowerMW);
   end
+  if limits.minSessionDeltaDPrime ~= -1
+      valid = valid & ((T.noStimDPrime - T.stimDPrime) >= limits.minSessionDeltaDPrime);
+  end
+  
   U = T(valid, :);
  
   % Some limits related to over-session performance.  We can requie a minimum number of sessions for each animal/ramp,

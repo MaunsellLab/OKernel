@@ -69,11 +69,17 @@ function plotKernelPage(U, limits, stimProfiles)
       doOneBootPlot(hitMissBoot, limits, 'stim', plotStartMS, plotEndMS, plotTitle, '');
   end  
   
-  %% Compile and plot the RT distributions
+  %% Compile and plot the RT distributions % Stimulated Case Only
   minRespTimeMS = min(U.startRT(:));
   maxRespTimeMS = min(U.endRT(:));
-  correctRTs = cat(2, U.correctRTs{:});
-  earlyRTs = cat(2, U.earlyRTs{:});
+  % Uncomment if you want to see Top Ups
+  % correctRTs = cat(2, U.topUpCorrectRTs{:}); 
+  
+  % Corrects for tested contrast only
+  correctRTs = [cat(2, U.noStimCorrectRTs{:}), cat(2, U.stimCorrectRTs{:})];
+  % Earlies for all trials regardless of contrast
+  earlyRTs = [cat(2, U.topUpEarlyRTs{:}), cat(2, U.noStimEarlyRTs{:}), cat(2, U.stimEarlyRTs{:})];
+  
   failRTs = cat(2, U.failRTs{:});
   doRTHistogramPlot(correctRTs, earlyRTs, failRTs, minRespTimeMS, maxRespTimeMS);
   doRTPDFPlot(correctRTs, earlyRTs, failRTs, minRespTimeMS, maxRespTimeMS);

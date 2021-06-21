@@ -1,7 +1,7 @@
 function [respLimitsMS, newIndices, fitCum, endCumTimeMS, fitStats, respLimitCIMS] = ...
         getResponseLimits(file, trials, indices, doCIs)
 %
-% The the cumulative RT distribution to find the time range in which responses actually occurred.
+% Use the cumulative RT distribution to find the time range in which responses actually occurred.
 % Adjust the contents of indices to exclude RT outside this range.  We fit a logistic function to the FA detrended
 % cumulative response function and then take upper and lower points of the response function to set the time when
 % the response window starts and ends.

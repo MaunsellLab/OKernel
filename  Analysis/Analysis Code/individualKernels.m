@@ -4,7 +4,7 @@ function individualKernels
   rampMS = 0;
   animals = {'1462', '1463'};
 
-  dataDirName = '/Users/jacksoncone/Dropbox/PostDoctoral Projects/!Experiments/Colliculus/BehavData/';
+  dataDirName = '/Users/jacksoncone/Dropbox/PostDoctoral Projects/!Experiments/Colliculus/BehavData/10 PC/';
   load([dataDirName ' Analysis/Mat Files/masterTable.mat'], 'T');
   limits = setLimits('All');
   limits.rampMS = rampMS;

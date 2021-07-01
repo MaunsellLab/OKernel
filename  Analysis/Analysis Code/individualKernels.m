@@ -2,8 +2,8 @@ function individualKernels
 % Plot all the kernels for the grand average across selected sessions, once for steps and once for ramps
 
   rampMS = 0;
-%   animals = {'1462', '1463'};
-  animals = {'1462'};
+  animals = {'1462', '1463'};
+%   animals = {'1462'};
 
 %   dataDirName = '/Users/jacksoncone/Dropbox/PostDoctoral Projects/!Experiments/Colliculus/BehavData/10 PC/';
 %   load([dataDirName ' Analysis/Mat Files/masterTable.mat'], 'T');

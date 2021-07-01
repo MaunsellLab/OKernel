@@ -3,7 +3,7 @@ function makeFigures(specifierStr)
   if nargin < 1
     specifierStr = 'oneOff';
   end
-%   preProcessAll();
+  preProcessAll();
   switch specifierStr
     case 'oneOff'
       [T, ~, limits] = getSessionTable('oneOff');

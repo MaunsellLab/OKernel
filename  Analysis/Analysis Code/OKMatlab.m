@@ -463,7 +463,7 @@ function psychometric(dParams, trials, trialStructs)
   %delay1YPos = delay1pci(:, 2)' - delay1HitRate;
   misses = length(miss);
   missRate = misses / (misses + length(hit));
-  falseHitRate = trials(end).falseHitRate / (trials(end).falseHitRate + missRate);
+ % falseHitRate = trials(end).falseHitRate / (trials(end).falseHitRate + missRate);
 
   subplot(dParams.plotLayout{:}, 5);
   cla;
@@ -481,7 +481,7 @@ function psychometric(dParams, trials, trialStructs)
   hold on;
   set(gca, 'ylim', [0 1]);
   xLimits = get(gca, 'XLim');
-  plot([xLimits(1), xLimits(2)], [falseHitRate, falseHitRate], 'k:');
+  %plot([xLimits(1), xLimits(2)], [falseHitRate, falseHitRate], 'k:');
   set(gca, 'XLim', [xLimits(1), min(xLimits(2), 100)]);
   set(gca, 'XTickLabel',num2str(transpose(get(gca, 'XTick'))))          % get rid of scientific notation
   ylabel('Percent Correct');

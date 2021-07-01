@@ -1,12 +1,13 @@
 function limits = setLimits(theSubset)
   % Set up the default selection criteria
-  limits.minSessions = 5;                	% require at least n sessions for each animal
+  limits.minSessions = 3;                	% require at least n sessions for each animal
   limits.minTrials = 0;
   limits.criterion = 0;
   limits.minDec = -1;
   limits.minDPrime = -1;
-  limits.minAvgDeltaDPrime = 0.10;
-  limits.maxMeanPowerMW = 0.25;
+  limits.minAvgDeltaDPrime = 0.1; % Use this to control stringency for data selection
+  limits.minSessionDeltaDPrime = 0.1; % Single Session Delta d-prime must exceed this for inclusion 
+  limits.maxMeanPowerMW = 0.5;
   limits.animal = {'All'};
   limits.oneDay = [];
   switch theSubset

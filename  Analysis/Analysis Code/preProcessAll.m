@@ -1,12 +1,11 @@
 function preProcessAll
-% Preprocess OKernel data for analysis.  This should be run whenever key analysis features are changed
+% Preprocess SCernel data for analysis.  This should be run whenever key analysis features are changed
 % Starting from scratch, prepare all data files for analysis.  We scan through every file doing the following:
 %  1) Find the response window to use, and assign trials to hits, misses, earlies
 %  2) Add a row for the file in the master table
 %  3) Make the stim profiles that are needed for bootstrapping kernels
 %
-% The data set processed is seleceted using whichData.m.  Currently supported are 'JDC' and 'JJC' for 
-% Julian Day-Cooney's and Jackson Cone's data
+% The data set processed is selected using whichData.m. 
 
   [dataDirName, tableName] = whichData();
   [varNames, varTypes] = tableNamesAndTypes();
@@ -140,7 +139,7 @@ function [row, stimProfiles] = getKernels(file, trials, row)
       eotCodes(t) = trials(t).trialEnd;
   end
   RTs = [trials(:).reactTimeMS];                              % get all trial RTs  
-	preStimMS = [trialStructs(:).preStimMS];                  	% get preStim times for each trial  
+	preStimMS = [trialStructs(:).preStimMS];                  % get preStim times for each trial  
 
   % calculate the overall d'
   theIndices = allIndices(trials, eotCodes, stimIndices);
@@ -148,34 +147,56 @@ function [row, stimProfiles] = getKernels(file, trials, row)
     row = []; stimProfiles = [];
     return;
   end
+    
+  % Get Visual Stimulus Levels to subset data by top-up versus low (tested) contrast
+  contrasts = [trialStructs(:).visualStimValue];
+  testContIdx = contrasts == min(contrasts); % We currently test the min contrast presented
+  topUpContIdx = contrasts == max(contrasts); % We present high contrasts just to keep em happy
+  
   % find the response interval and get a modified set of indices that limits hits to only that interval
-	[respLimitsMS, theIndices, ~, ~] = getResponseLimits(file, trials, theIndices);
+  [respLimitsMS, theIndices, ~, ~] = getResponseLimits(file, trials, theIndices);
   row.startRT = respLimitsMS(1);
   row.endRT = respLimitsMS(2);
   row.RTWindowMS = diff(respLimitsMS);
-  row.noStimCorrects = sum(theIndices.correct & ~stimIndices);
-  row.noStimFails = sum(theIndices.fail & ~stimIndices);
-  row.noStimEarlies = sum(theIndices.early & ~stimIndices); 
+  
+  % Basic metrics for TopUp Contrast Trials
+  row.topUpCorrects = sum(theIndices.correct & ~stimIndices & topUpContIdx);
+  row.topUpFails = sum(theIndices.fail & ~stimIndices & topUpContIdx);
+  row.topUpEarlies = sum(theIndices.early & ~stimIndices & topUpContIdx);  % This is for all trials but thats fine bc no vis stim occurs
+  row.numTopUp = row.topUpCorrects + row.topUpFails + row.topUpEarlies;
+  
+  % Basic metrics for no stim trials @ tested contrast
+  row.noStimCorrects = sum(theIndices.correct & ~stimIndices & testContIdx);
+  row.noStimFails = sum(theIndices.fail & ~stimIndices & testContIdx);
+  row.noStimEarlies = sum(theIndices.early & ~stimIndices & testContIdx);  % This is for all trials but thats fine bc no vis stim occurs
   row.numNoStim = row.noStimCorrects + row.noStimFails + row.noStimEarlies;  % don't count kEOTIgnored
-  row.stimCorrects = sum(theIndices.correct & stimIndices);
-  row.stimFails = sum(theIndices.fail & stimIndices);
-  row.stimEarlies = sum(theIndices.early & stimIndices);
+  
+  % Basic metric for stim trials @ tested contrast
+  row.stimCorrects = sum(theIndices.correct & stimIndices & testContIdx);
+  row.stimFails = sum(theIndices.fail & stimIndices & testContIdx);
+  row.stimEarlies = sum(theIndices.early & stimIndices & testContIdx);
   row.numStim = row.stimCorrects + row.stimFails + row.stimEarlies;                  % don't count kEOTIgnored
 
-  % find the performance across stim and nostim trials combined
-  hitRate = sum(theIndices.correct) / (sum(theIndices.correct) + sum(theIndices.fail));
+  % Overall Earlies and Early Rate Across All trials
   rateEarly = earlyRate(file, trials, theIndices.correct, theIndices.fail, theIndices.early);
   row.pFA = 1.0 - exp(-rateEarly * row.RTWindowMS / 1000.0);
-  row.pHit = (hitRate - row.pFA) / (1.0 - row.pFA);
-  [row.dPrime, row.c] = dprime(row.pHit, row.pFA, true);
-  if abs(row.dPrime) == Inf
-    row.dPrime = NaN; 
+  
+  % find the performance on Top-Up trials 
+  indices.correct = theIndices.correct & ~stimIndices & topUpContIdx;
+  indices.fail = theIndices.fail & ~stimIndices & topUpContIdx;
+  topUpHitRate = sum(indices.correct) / (sum(indices.correct) + sum(indices.fail));
+  row.topUpPHit = (topUpHitRate - row.pFA) / (1.0 - row.pFA);
+  
+  [row.topUpDPrime, row.topUpC] = dprime(row.topUpPHit, row.pFA, true);
+  if abs(row.topUpDPrime) == Inf
+    row.row.topUpDPrime = NaN; 
   end
 
-  % calculate the nostim trial d' using the all-trial pFA and the all-trial response window
-  indices.correct = theIndices.correct & ~stimIndices;
-  indices.fail = theIndices.fail & ~stimIndices;
-  indices.early = theIndices.early & ~stimIndices;
+  % calculate the nostim trial d' using the all trial pFA & the all-trial response window
+  indices.correct = theIndices.correct & ~stimIndices & testContIdx;
+  indices.fail = theIndices.fail & ~stimIndices & testContIdx;
+  indices.early = theIndices.early & ~stimIndices & testContIdx;
+  
   if sum(indices.correct | indices.fail | indices.early) > 0
     hitRate = sum(indices.correct) / (sum(indices.correct) + sum(indices.fail));
     rateEarly = earlyRate(file, trials, indices.correct, indices.fail, indices.early);
@@ -188,9 +209,10 @@ function [row, stimProfiles] = getKernels(file, trials, row)
   end
     
   % calculate the stim trial d' using the all-trial pFA and the all-trial response window
-  indices.correct = theIndices.correct & stimIndices;
-  indices.fail = theIndices.fail & stimIndices;
-  indices.early = theIndices.early & stimIndices;
+  indices.correct = theIndices.correct & stimIndices & testContIdx;
+  indices.fail = theIndices.fail & stimIndices & testContIdx;
+  indices.early = theIndices.early & stimIndices & testContIdx;
+  
   if sum(indices.correct | indices.fail | indices.early) > 0
     hitRate = sum(indices.correct) / (sum(indices.correct) + sum(indices.fail));
     rateEarly = earlyRate(file, trials, indices.correct, indices.fail, indices.early);
@@ -242,12 +264,18 @@ function [row, stimProfiles] = getKernels(file, trials, row)
   row.kernelCI = sqrt(hitCI^2 + failCI^2);
   if ~isempty(hitKernel) && ~isempty(failKernel)
     row.kernelPeak =  max(abs((hitKernel(1:plotEndMS - plotStartMS) - failKernel(1:plotEndMS - plotStartMS))) / row.kernelCI);
-    row.randomKernel = getRandomKernel(row.stimCorrects, row.stimFails, trialStructs(1).pulseDurMS, plotEndMS - plotStartMS);
+    row.randomKernel = {getRandomKernel(row.stimCorrects, row.stimFails, trialStructs(1).pulseDurMS, plotEndMS - plotStartMS)};
   end
 
-  % add to the RT distributions
-  row.correctRTs = {[trials(theIndices.correct).reactTimeMS]};
-  row.earlyRTs = {[trials(theIndices.early).reactTimeMS]};
+  % add to the RT distributions (Do this for each stim type, can be re-combined later if needed)
+  row.topUpCorrectRTs = {[trials(theIndices.correct & ~stimIndices & topUpContIdx).reactTimeMS]};
+  row.stimCorrectRTs = {[trials(theIndices.correct & ~stimIndices & testContIdx).reactTimeMS]};
+  row.noStimCorrectRTs = {[trials(theIndices.correct & stimIndices & testContIdx).reactTimeMS]};
+  
+  row.topUpEarlyRTs = {[trials(theIndices.early & ~stimIndices & topUpContIdx).reactTimeMS]};
+  row.stimEarlyRTs = {[trials(theIndices.early & ~stimIndices & testContIdx).reactTimeMS]};
+  row.noStimEarlyRTs = {[trials(theIndices.early & stimIndices & testContIdx).reactTimeMS]};
+  
   failRTs = [trials(theIndices.fail).reactTimeMS];
   failRTs(failRTs < 0 | failRTs > 100000) = 100000;     % include fails in count, but don't let them display on plot
   row.failRTs = {failRTs};
@@ -285,6 +313,10 @@ function row = initializeRow(animalName, fileName, rampMS)
   row.meanPowerMW = 0.0;
   row.maxPowerMW = 0.0;
   row.RTWindowMS = 0.0;
+  row.numTopUp = 0;
+  row.topUpCorrects = 0;
+  row.topUpFails = 0;
+  row.topUpEarlies = 0;
   row.numStim = 0;
   row.stimCorrects = 0;
   row.stimFails = 0;
@@ -293,10 +325,10 @@ function row = initializeRow(animalName, fileName, rampMS)
   row.noStimCorrects = 0;
   row.noStimFails = 0;
   row.noStimEarlies = 0;
-  row.pHit = 0.0;
   row.pFA = 0.0;
-  row.dPrime = 0.0;
-  row.c = 0.0;
+  row.topUpPHit = 0.0;
+  row.topUpDPrime = 0.0;
+  row.topUpC = 0.0;
   row.stimPHit = 0.0;
   row.stimPFA = 0.0;
   row.stimDPrime = 0.0;
@@ -315,9 +347,13 @@ function row = initializeRow(animalName, fileName, rampMS)
   row.randomKernel = {0};
   row.startRT = 0;
   row.endRT = 0;
-  row.correctRTs = {0};
+  row.topUpCorrectRTs = {0};
+  row.stimCorrectRTs = {0};
+  row.noStimCorrectRTs = {0};
+  row.topUpEarlyRTs = {0};
+  row.stimEarlyRTs = {0};
+  row.noStimEarlyRTs = {0};
   row.failRTs = {0};
-  row.earlyRTs = {0};
 end
 
 %%
@@ -332,19 +368,23 @@ end
 function [names, types] = tableNamesAndTypes()
 %
   names = {'animal', 'date', 'rampMS', 'meanPowerMW', 'maxPowerMW', 'RTWindowMS', ...
+    'numTopUp', 'topUpCorrects', 'topUpFails', 'topUpEarlies', ...
     'numStim', 'stimCorrects', 'stimFails', 'stimEarlies', ...
     'numNoStim', 'noStimCorrects', 'noStimFails', 'noStimEarlies', ...
-    'pHit', 'pFA', 'dPrime', 'c', ...
+    'pFA', 'topUpPHit', 'topUpDPrime', 'topUpC', ...
     'stimPHit', 'stimPFA', 'stimDPrime', 'stimC', 'noStimPHit', 'noStimPFA', 'noStimDPrime', 'noStimC', ...
     'kernelCI', 'kernelPeak', 'hitKernel', 'failKernel', 'earlyKernel', 'RTKernel', 'SRTKernel', 'randomKernel', ...
-    'startRT', 'endRT', 'correctRTs', 'failRTs', 'earlyRTs'};
+    'startRT', 'endRT', ...
+    'topUpCorrectRTs', 'stimCorrectRTs','noStimCorrectRTs' 'topUpEarlyRTs', 'stimEarlyRTs', 'noStimEarlyRTs', 'failRTs'};
   types = {'string', 'string', 'uint32', 'double', 'double', 'double', ...
+    'uint32', 'uint32', 'uint32', 'uint32', ...
     'uint32', 'uint32', 'uint32', 'uint32', ...
     'uint32', 'uint32', 'uint32', 'uint32', ...
     'double', 'double',  'double', 'double', ...
     'double', 'double', 'double',  'double', 'double', 'double', 'double',  'double', ...
     'double', 'double', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell', ...
-    'uint32', 'uint32', 'cell', 'cell', 'cell'};
+    'uint32', 'uint32', ...
+    'cell', 'cell', 'cell', 'cell', 'cell', 'cell', 'cell'};
 end
 
  

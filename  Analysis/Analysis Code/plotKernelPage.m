@@ -3,7 +3,7 @@ function plotKernelPage(U, limits, stimProfiles)
   display(U);
   [plotStartMS, plotEndMS, plotRTStartMS] = plotLimits();
   
-  h = figure(1);
+  h = figure;
   set(h, 'Units', 'inches', 'Position', [25, 1.25, 8.5, 11]);
   clf;
   ylabel = 'Normalized Power';
@@ -69,14 +69,20 @@ function plotKernelPage(U, limits, stimProfiles)
       doOneBootPlot(hitMissBoot, limits, 'stim', plotStartMS, plotEndMS, plotTitle, '');
   end  
   
-  %% Compile and plot the RT distributions
+  %% Compile and plot the RT distributions % Stimulated Case Only
   minRespTimeMS = min(U.startRT(:));
   maxRespTimeMS = min(U.endRT(:));
-  correctRTs = cat(2, U.correctRTs{:});
-  earlyRTs = cat(2, U.earlyRTs{:});
+  % Uncomment if you want to see Top Ups
+  % correctRTs = cat(2, U.topUpCorrectRTs{:}); 
+  
+  % Corrects for tested contrast only
+  correctRTs = [cat(2, U.noStimCorrectRTs{:}), cat(2, U.stimCorrectRTs{:})];
+  % Earlies for all trials regardless of contrast
+  earlyRTs = [cat(2, U.topUpEarlyRTs{:}), cat(2, U.noStimEarlyRTs{:}), cat(2, U.stimEarlyRTs{:})];
+  
   failRTs = cat(2, U.failRTs{:});
   doRTHistogramPlot(correctRTs, earlyRTs, failRTs, minRespTimeMS, maxRespTimeMS);
-  doRTPDFPlot(correctRTs, earlyRTs, failRTs, minRespTimeMS, maxRespTimeMS)
+  doRTPDFPlot(correctRTs, earlyRTs, failRTs, minRespTimeMS, maxRespTimeMS);
 
   % Coordinate the scaling across plots
   sameYAxisScaling(4, 3, [4, 5, 7, 8, 10]);

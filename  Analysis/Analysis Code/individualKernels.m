@@ -3,12 +3,12 @@ function individualKernels
 
   rampMS = 0;
   animals = {'1462', '1463'};
-%   animals = {'1462'};
-
+  
 %   dataDirName = '/Users/jacksoncone/Dropbox/PostDoctoral Projects/!Experiments/Colliculus/BehavData/10 PC/';
 %   load([dataDirName ' Analysis/Mat Files/masterTable.mat'], 'T');
   [dataDirName, tableName] = whichData();
   load([dataDirName tableName], 'T');
+  
   limits = setLimits('All');
   limits.rampMS = rampMS;
   for a = 1:length(animals)

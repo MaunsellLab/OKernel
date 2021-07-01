@@ -1,9 +1,9 @@
 function trials = validateTrials(trials)
   %% validateTrials -- make sure that every trial has an EOT and meanPower so the indices will align
  
-  trials = validateOneField(trials, 'trialEnd', -1);
-  trials = validateOneField(trials, 'meanPowerMW', -1);
-  trials = validateOneField(trials, 'trial', trials(1).trial);
+  trials = atLeastOnePerTrial(trials, 'trialEnd', -1);
+  trials = atLeastOnePerTrial(trials, 'meanPowerMW', -1);
+  trials = atLeastOnePerTrial(trials, 'trial', trials(1).trial);
 
   % it's a little harder to do the check on fields that are further nested
   numTrials = length(trials);
@@ -18,9 +18,21 @@ function trials = validateTrials(trials)
       end
     end  
   end
+  
+  % ensure that there each trial has no more than one reactTimeMS and one and only one trialEnd
+  for t = 1:length(trials)                               
+    if length(trials(t).reactTimeMS) > 1
+        trials(t).reactTimeMS = trials(t).reactTimeMS(1);   
+    end
+    if ~isfield(trials(t), 'trialEnd') || isempty(trials(t).trialEnd)
+        trials(t).trialEnd = -1;
+    elseif length(trials(t).trialEnd) > 1
+        trials(t).trialEnd = trials(t).trialEnd(1);   
+    end
+  end
 end
 
-function trials = validateOneField(trials, fieldName, defaultValue)
+function trials = atLeastOnePerTrial(trials, fieldName, defaultValue)
 
   if isfield(trials, fieldName)
     numField = length([trials(:).(fieldName)]);                           % get number of entries for each trial

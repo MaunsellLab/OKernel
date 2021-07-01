@@ -51,9 +51,13 @@ function [respLimitsMS, newIndices, fitCum, endCumTimeMS, fitStats, respLimitCIM
   end
   % create new indices that make RTs before the newly found response interval earlies and those after the 
   % newly found response intervals fails
+%   newIndices.correct = trialEnds == 0 & RTs >= respLimitsMS(1) & RTs < respLimitsMS(2);
+%   newIndices.early = trialEnds == 1 & RTs < respLimitsMS(1);
+%   newIndices.fail = trialEnds == 2 & RTs >= respLimitsMS(2);
+
   newIndices.correct = trialEnds == 0 & RTs >= respLimitsMS(1) & RTs < respLimitsMS(2);
-  newIndices.early = trialEnds == 1 & RTs < respLimitsMS(1);
-  newIndices.fail = trialEnds == 2 & RTs >= respLimitsMS(2);
+  newIndices.early = (trialEnds == 1 | trialEnds == 0) & RTs < respLimitsMS(1);
+  newIndices.fail = (trialEnds == 2 | trialEnds == 0) & RTs >= respLimitsMS(2);
 end
 
 function [respLimitsMS, fitStats, fitCum] = respLimits(RTs, file, numEarly, numTotal, startTime, endTime)

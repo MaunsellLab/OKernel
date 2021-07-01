@@ -8,7 +8,7 @@ function plotKernelPage(U, limits, stimProfiles)
   clf;
   ylabel = 'Normalized Power';
   limits.yAxis = 0.5;
-  limits.numBoot = 10;
+  limits.numBoot = 250;
   
   % hit kernel
   numHits = size(stimProfiles.hitProfiles, 1);

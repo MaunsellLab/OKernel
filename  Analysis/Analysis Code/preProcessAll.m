@@ -20,7 +20,6 @@ function preProcessAll
   end
   % compile each session
   session = 1;
-  RTs = [];
   for a = 1:numAnimals
       fileNames = getFileNames(animalNames{a});
       numFiles = length(fileNames);
@@ -31,8 +30,7 @@ function preProcessAll
           if length(fileName) > 10
              continue; 
           end
-          [row, stimProfiles, fileRTs] = doOneFile(dataDirName, animalNames{a}, fileName);
-          RTs = [RTs, fileRTs];
+          [row, stimProfiles] = doOneFile(dataDirName, animalNames{a}, fileName);
           if ~isempty(row)
             T = [T; row];   %#ok<AGROW>
           end
@@ -51,18 +49,17 @@ function preProcessAll
 end
 
 %%
-function [row, stimProfiles, RTs] = doOneFile(dataDirName, animalName, fileName)
+function [row, stimProfiles] = doOneFile(dataDirName, animalName, fileName)
 %
   load([dataDirName animalName '/MatFiles/' fileName]); %#ok<LOAD>
   if ~exist('trials', 'var') || ~isfield(trials, 'trial') || ~(str2double(animalName) == file.subjectNumber) %#ok<NODEF>
     row = [];
     stimProfiles = [];
-    RTs = [];
     return;
   end
 	trials = validateTrials(trials);                          % check trialEnds, etc.
   row = initializeRow(animalName, fileName, trials(1).trial.visualRampDurMS);
-	[row, stimProfiles, RTs] = getKernels(file, trials, row);      % compile the kernels for this file
+	[row, stimProfiles] = getKernels(file, trials, row);      % compile the kernels for this file
 end
 
 %%
@@ -102,7 +99,7 @@ function fileNames = getFileNames(animalName)
 end
 
 %%
-function [row, stimProfiles, RTs] = getKernels(file, trials, row)
+function [row, stimProfiles] = getKernels(file, trials, row)
 %
 % Compute kernels for one session
 %
@@ -116,7 +113,6 @@ function [row, stimProfiles, RTs] = getKernels(file, trials, row)
   end
   if sum(stimIndices) == 0                                    % no stimulation with full opto contrast
     row = []; stimProfiles = [];
-    RTs = [];
     return;
   end
   
@@ -135,7 +131,6 @@ function [row, stimProfiles, RTs] = getKernels(file, trials, row)
   theIndices = allIndices(trials, eotCodes);
   if sum(theIndices.correct | theIndices.fail | theIndices.early) < 10
     row = []; stimProfiles = [];
-    RTs = [];
     return;
   end
     
@@ -149,12 +144,6 @@ function [row, stimProfiles, RTs] = getKernels(file, trials, row)
   row.startRT = respLimitsMS(1);
   row.endRT = respLimitsMS(2);
   row.RTWindowMS = diff(respLimitsMS);
-  
-  
-  RTs = [[trials(theIndices.correct).reactTimeMS], ...
-    [trials(theIndices.early).reactTimeMS], ...
-    [trials(theIndices.fail).reactTimeMS]];
-  
   
   % Basic metrics for TopUp Contrast Trials
   row.topUpCorrects = sum(theIndices.correct & ~stimIndices & topUpContIdx);
@@ -222,8 +211,8 @@ function [row, stimProfiles, RTs] = getKernels(file, trials, row)
   end
   
   % get the various kernels.  We use the indices set up in the previous block that include only stimulated trials.
-  
   [plotStartMS, plotEndMS, plotRTStartMS] = plotLimits();     % get the limits for the plots we will display  
+  
   % get the hit kernel.  We use the indices set up to have only stimulated trials within the detected response window.
   profiles = getStimProfiles(trials(indices.correct), plotStartMS, plotEndMS, true, false);
   hitSums(:) = sum(profiles, 1);
@@ -248,8 +237,7 @@ function [row, stimProfiles, RTs] = getKernels(file, trials, row)
   row.failKernel = {failKernel};
   failCI = stimCI(row.stimFails);
 
-  % Get the early kernel.  Eliminate trials that start before the end of the ramping stimulus.
-% 	earlyIndices = indices.early & (preStimMS + RTs + plotRTStartMS > 200);
+  % Get the early kernel.  
   if row.stimEarlies > 0
       profiles = getStimProfiles(trials(indices.early), plotRTStartMS, plotRTStartMS + plotEndMS - plotStartMS, true, true);
       earlySum(:) = sum(profiles, 1);
@@ -276,9 +264,7 @@ function [row, stimProfiles, RTs] = getKernels(file, trials, row)
   failRTs = [trials(theIndices.fail).reactTimeMS];
   failRTs(failRTs < 0 | failRTs >= 10000) = 100000;     % include fails in count, but don't let them display on plot
   row.failRTs = {failRTs};
-  
-%   RTs = [row.stimCorrectRTs{1}, row.noStimCorrectRTs{1}, row.stimEarlyRTs{1}, row.noStimEarlyRTs{1}, row.failRTs{1}];
-  
+    
   % get the hit profiles
   hitIndices = theIndices.correct & stimIndices;
   hitProfiles = getStimProfiles(trials(hitIndices), plotStartMS, plotEndMS, true, false);
@@ -298,7 +284,7 @@ function [row, stimProfiles, RTs] = getKernels(file, trials, row)
 
   % Get the early profiles
   earlyProfiles = getStimProfiles(trials(theIndices.early & stimIndices), plotRTStartMS, plotRTStartMS + plotEndMS - plotStartMS, true, true);
-  stimProfiles.earlyProfiles = normProfiles(earlyProfiles);
+  stimProfiles.earlyProfiles = normProfiles(earlyProfiles);  
 end
 
 %%

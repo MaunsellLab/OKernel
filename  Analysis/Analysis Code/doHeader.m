@@ -22,8 +22,8 @@ function doHeader(U, limits)
     if mod(a, 4)
       headerText{end + 1} = animalList; 
     end
-  elseif length(limits.animal) == 1
-    headerText{end + 1} = sprintf('%d sessions from Animal %s', size(U, 1), limits.animal{1});
+  elseif ~iscell(limits.animal)                     % only one animal
+    headerText{end + 1} = sprintf('%d sessions from Animal %s', size(U, 1), limits.animal);
   else
     headerText{end + 1} = sprintf('%d sessions from %d animals', size(U, 1), length(limits.animal));
   end
@@ -33,9 +33,9 @@ function doHeader(U, limits)
   else
     headerText{end + 1} = sprintf('Delta d'' >=%.2f', limits.minAvgDeltaDPrime);
   end
-  headerText{end + 1} = sprintf('Avg(SD) d'' noStim: %.2f (%.2f)', nanmean(U.noStimDPrime), nanstd(U.noStimDPrime));
-  headerText{end + 1} = sprintf('Avg(SD) d''   stim: %.2f (%.2f)', nanmean(U.stimDPrime), nanstd(U.stimDPrime));
-  headerText{end + 1} = sprintf('Avg(SD) delta d'': %.2f (%.2f)', nanmean(U.noStimDPrime - U.stimDPrime), ...
+  headerText{end + 1} = sprintf('Avg (SD) d'' noStim: %.2f (%.2f)', nanmean(U.noStimDPrime), nanstd(U.noStimDPrime));
+  headerText{end + 1} = sprintf('Avg (SD) d''   stim: %.2f (%.2f)', nanmean(U.stimDPrime), nanstd(U.stimDPrime));
+  headerText{end + 1} = sprintf('Avg (SD) delta d'': %.2f (%.2f)', nanmean(U.noStimDPrime - U.stimDPrime), ...
     nanstd(U.noStimDPrime - U.stimDPrime));
   axisHandle = subplot(4, 3, 1);						% default axes are 0 to 1
   set(axisHandle, 'visible', 'off');

@@ -36,7 +36,7 @@ function [U, dataDirName, limits] = getSessionTable(theSubset)
     valid = valid & T.meanPowerMW <= limits.maxMeanPowerMW;
   end
   U = T(valid, :);
- 	U.dPrime(U.dPrime == Inf) = NaN; 
+%  	U.dPrime(U.dPrime == Inf) = NaN; 
 	U.noStimDPrime(U.noStimDPrime == Inf) = NaN; 
 	U.stimDPrime(U.stimDPrime == Inf) = NaN; 
  

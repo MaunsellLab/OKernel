@@ -25,7 +25,7 @@ function plotKernelPage(U, limits, stimProfiles)
   % total kernel trials weighted across all trials. We need to multiple the weighted sum by 2 because it is effectively
   % a mean of the hit and miss kernels, not a difference. By taking the mean, we lose the doubling that we should get
   % from the opposing effects.  This has been validated in simulations. 
-  plotTitle = sprintf('Weight by Trial (n=%d)', numHits + numMisses);
+  plotTitle = sprintf('Total Kernel (n=%d)', numHits + numMisses);
   limits.yAxis = 0.0;
   hitMissBoot = [stimProfiles.hitProfiles; -stimProfiles.missProfiles];
   subplot(4, 3, 6);
